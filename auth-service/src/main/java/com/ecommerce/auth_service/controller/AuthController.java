@@ -1,6 +1,9 @@
 package com.ecommerce.auth_service.controller;
 
 import com.ecommerce.auth_service.dto.RegisterRequest;
+import com.ecommerce.auth_service.dto.LoginRequest;
+import com.ecommerce.auth_service.dto.AuthResponse;
+import com.ecommerce.auth_service.service.JwtService;
 import com.ecommerce.auth_service.model.User;
 import com.ecommerce.auth_service.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
@@ -13,10 +16,14 @@ public class AuthController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthController(UserRepository userRepository, 
+                          PasswordEncoder passwordEncoder,
+                          JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     @PostMapping("/register")
@@ -33,4 +40,23 @@ public class AuthController {
         userRepository.save(user);
         return ResponseEntity.ok("User registered successfully");
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        var userOptional = userRepository.findByEmail(request.email);
+
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(401).body("Invalid credentials");
+        }
+
+        var user = userOptional.get();
+
+        if (!passwordEncoder.matches(request.password, user.getPassword())) {
+            return ResponseEntity.status(401).body("Invalid credentials");
+        }
+
+        String token = jwtService.generateToken(user.getEmail());
+        return ResponseEntity.ok(new AuthResponse(token));
+    }
+
 }
