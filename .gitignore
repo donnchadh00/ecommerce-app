@@ -1,0 +1,17 @@
+# Java
+target/
+*.class
+
+# IntelliJ
+.idea/
+*.iml
+
+# Logs
+*.log
+
+# Docker
+.env
+*.pid
+
+# Others
+node_modules/
