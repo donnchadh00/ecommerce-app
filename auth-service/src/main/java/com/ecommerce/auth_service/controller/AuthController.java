@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -63,6 +64,12 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<?> getMe(Authentication authentication) {
         return ResponseEntity.ok("Authenticated as: " + authentication.getName());
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/only")
+    public ResponseEntity<?> adminOnly() {
+        return ResponseEntity.ok("Welcome, Admin!");
     }
 
 }
