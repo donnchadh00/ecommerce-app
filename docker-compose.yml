@@ -3,6 +3,7 @@ services:
   postgres-auth:
     image: postgres:15
     container_name: postgres-auth
+    restart: always
     environment:
       POSTGRES_DB: authdb
       POSTGRES_USER: user
@@ -12,5 +13,19 @@ services:
     volumes:
       - auth-db-data:/var/lib/postgresql/data
 
+  postgres-product:
+    image: postgres:15
+    container_name: postgres-product
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: productdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - product-db-data:/var/lib/postgresql/data
+
 volumes:
   auth-db-data:
+  product-db-data:
