@@ -37,10 +37,26 @@ public class AuthController {
         User user = new User();
         user.setEmail(request.email);
         user.setPassword(passwordEncoder.encode(request.password));
-        user.setRole(request.role != null ? request.role : "USER");
+        user.setRole("USER");
 
         userRepository.save(user);
         return ResponseEntity.ok("User registered successfully");
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/create-user")
+    public ResponseEntity<?> createUser(@RequestBody RegisterRequest request) {
+        if (userRepository.findByEmail(request.email).isPresent()) {
+            return ResponseEntity.badRequest().body("User already exists");
+        }
+
+        User user = new User();
+        user.setEmail(request.email);
+        user.setPassword(passwordEncoder.encode(request.password));
+        user.setRole(request.role != null ? request.role : "USER");
+        
+        userRepository.save(user);
+        return ResponseEntity.ok("User created successfully");
     }
 
     @PostMapping("/login")
