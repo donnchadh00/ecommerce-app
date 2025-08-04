@@ -5,6 +5,7 @@ import com.ecommerce.product_service.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -15,12 +16,14 @@ public class ProductController {
 
     private final ProductRepository productRepository;
 
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {
         return ResponseEntity.ok(productRepository.findAll());
     }
 
-    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/create")
     public ResponseEntity<Product> createProduct(@RequestBody Product product) {
         return ResponseEntity.ok(productRepository.save(product));
     }
