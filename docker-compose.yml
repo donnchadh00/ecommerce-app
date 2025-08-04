@@ -26,6 +26,20 @@ services:
     volumes:
       - product-db-data:/var/lib/postgresql/data
 
+  postgres-order:
+    image: postgres:15
+    container_name: postgres-order
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: orderdb
+    ports:
+      - "5434:5432"
+    volumes:
+      - order-db-data:/var/lib/postgresql/data
+
 volumes:
   auth-db-data:
   product-db-data:
+  order-db-data:
