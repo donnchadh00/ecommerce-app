@@ -39,6 +39,33 @@ services:
     volumes:
       - order-db-data:/var/lib/postgresql/data
 
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgres-auth
+    # environment:
+    #   SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-auth:5432/authdb
+
+  product-service:
+    build: ./product-service
+    ports:
+      - "8082:8080"
+    depends_on:
+      - postgres-product
+    # environment:
+    #   SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-product:5432/productdb
+
+  order-service:
+    build: ./order-service
+    ports:
+      - "8083:8080"
+    depends_on:
+      - postgres-order
+    # environment:
+    #   SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-order:5432/orderdb
+
 volumes:
   auth-db-data:
   product-db-data:
