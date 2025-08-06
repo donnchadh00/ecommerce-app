@@ -40,7 +40,9 @@ services:
       - order-db-data:/var/lib/postgresql/data
 
   auth-service:
-    build: ./auth-service
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
     ports:
       - "8081:8080"
     depends_on:
@@ -49,7 +51,9 @@ services:
     #   SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-auth:5432/authdb
 
   product-service:
-    build: ./product-service
+    build:
+      context: .
+      dockerfile: product-service/Dockerfile
     ports:
       - "8082:8080"
     depends_on:
@@ -58,7 +62,9 @@ services:
     #   SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-product:5432/productdb
 
   order-service:
-    build: ./order-service
+    build:
+      context: .
+      dockerfile: order-service/Dockerfile
     ports:
       - "8083:8080"
     depends_on:

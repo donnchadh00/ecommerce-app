@@ -3,42 +3,23 @@ package com.ecommerce.order_service.service;
 import com.ecommerce.order_service.model.Order;
 import com.ecommerce.order_service.model.OrderItem;
 import com.ecommerce.order_service.repository.OrderRepository;
-import com.ecommerce.order_service.security.JwtService;
+import com.ecommerce.common.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import jakarta.servlet.http.HttpServletRequest;
-
-import java.security.Principal;
 import java.util.List;
-import java.util.ArrayList;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import jakarta.servlet.http.HttpServletRequest;
-
-import java.nio.charset.StandardCharsets;
 
 @Service
 @RequiredArgsConstructor
 public class OrderService {
 
     private final OrderRepository orderRepository;
-
-    private static final String SECRET_KEY = "mysecretkeymysecretkeymysecretkeymysecretkey";
-
-    public Long getUserIdFromJwt(HttpServletRequest request) {
-        String token = request.getHeader("Authorization").replace("Bearer ", "");
-
-        Claims claims = Jwts.parser()
-            .setSigningKey(SECRET_KEY.getBytes(StandardCharsets.UTF_8))
-            .parseClaimsJws(token)
-            .getBody();
-
-        return claims.get("userId", Long.class);
-    }
+    private final JwtService jwtService;
 
     public Order createOrder(Order order, HttpServletRequest request) {
-        Long userId = getUserIdFromJwt(request);
+        String token = request.getHeader("Authorization");
+        Long userId = jwtService.extractUserId(token);
         order.setUserId(userId);
 
         for (OrderItem item : order.getItems()) {
@@ -49,7 +30,8 @@ public class OrderService {
     }
 
     public List<Order> getOrdersForUser(HttpServletRequest request) {
-        Long userId = getUserIdFromJwt(request);
+        String token = request.getHeader("Authorization");
+        Long userId = jwtService.extractUserId(token);
 
         return orderRepository.findByUserId(userId);
     }

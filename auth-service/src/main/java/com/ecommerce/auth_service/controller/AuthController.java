@@ -3,7 +3,7 @@ package com.ecommerce.auth_service.controller;
 import com.ecommerce.auth_service.dto.RegisterRequest;
 import com.ecommerce.auth_service.dto.LoginRequest;
 import com.ecommerce.auth_service.dto.AuthResponse;
-import com.ecommerce.auth_service.service.JwtService;
+import com.ecommerce.common.security.JwtService;
 import com.ecommerce.auth_service.model.User;
 import com.ecommerce.auth_service.repository.UserRepository;
 import org.springframework.http.ResponseEntity;

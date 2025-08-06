@@ -1,7 +1,6 @@
 package com.ecommerce.order_service.controller;
 
 import com.ecommerce.order_service.model.Order;
-import com.ecommerce.order_service.repository.OrderItemRepository;
 import com.ecommerce.order_service.service.OrderService;
 
 import lombok.RequiredArgsConstructor;
@@ -9,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
