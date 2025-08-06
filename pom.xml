@@ -20,6 +20,7 @@
         <module>auth-service</module>
         <module>product-service</module>
         <module>order-service</module>
+        <module>cart-service</module>
         <module>common-lib</module>
     </modules>
 
