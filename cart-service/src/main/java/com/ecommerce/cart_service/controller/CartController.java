@@ -1,7 +1,6 @@
 package com.ecommerce.cart_service.controller;
 
 import com.ecommerce.cart_service.model.CartItem;
-import com.ecommerce.cart_service.repository.CartItemRepository;
 import com.ecommerce.cart_service.service.CartService;
 import com.ecommerce.common.security.JwtService;
 
@@ -9,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.HttpStatus;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -20,7 +18,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CartController {
 
-    private final CartItemRepository cartRepo;
     private final CartService cartService;
     private final JwtService jwtService;
 
