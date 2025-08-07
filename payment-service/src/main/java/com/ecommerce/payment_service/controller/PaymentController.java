@@ -1,6 +1,7 @@
 package com.ecommerce.payment_service.controller;
 
-import com.ecommerce.payment_service.model.Payment;
+import com.ecommerce.payment_service.dto.PaymentRequestDto;
+import com.ecommerce.payment_service.dto.PaymentResponseDto;
 import com.ecommerce.payment_service.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,19 +17,19 @@ public class PaymentController {
 
     @PreAuthorize("hasRole('USER')")
     @PostMapping
-    public ResponseEntity<Payment> createPayment(@RequestBody Payment payment) {
-        return ResponseEntity.ok(paymentService.initiatePayment(payment));
+    public ResponseEntity<PaymentResponseDto> createPayment(@RequestBody PaymentRequestDto dto) {
+        return ResponseEntity.ok(paymentService.initiatePayment(dto));
     }
 
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/{id}")
-    public ResponseEntity<Payment> getPayment(@PathVariable Long id) {
+    public ResponseEntity<PaymentResponseDto> getPayment(@PathVariable Long id) {
         return ResponseEntity.ok(paymentService.getPaymentById(id));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/{id}/refund")
-    public ResponseEntity<Payment> refund(@PathVariable Long id) {
+    public ResponseEntity<PaymentResponseDto> refund(@PathVariable Long id) {
         return ResponseEntity.ok(paymentService.refundPayment(id));
     }
 }

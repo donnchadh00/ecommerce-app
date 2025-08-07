@@ -1,9 +1,10 @@
 package com.ecommerce.payment_service.service;
 
-import com.ecommerce.payment_service.model.Payment;
+import com.ecommerce.payment_service.dto.PaymentRequestDto;
+import com.ecommerce.payment_service.dto.PaymentResponseDto;
 
 public interface PaymentService {
-    Payment initiatePayment(Payment payment);
-    Payment getPaymentById(Long id);
-    Payment refundPayment(Long id);
+    PaymentResponseDto initiatePayment(PaymentRequestDto dto);
+    PaymentResponseDto getPaymentById(Long id);
+    PaymentResponseDto refundPayment(Long id);
 }
