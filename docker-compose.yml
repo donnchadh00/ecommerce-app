@@ -65,6 +65,19 @@ services:
     volumes:
       - payment-db-data:/var/lib/postgresql/data
 
+  postgres-inventory:
+    image: postgres:15
+    container_name: postgres-inventory
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: inventorydb
+    ports:
+      - "5437:5432"
+    volumes:
+      - inventory-db-data:/var/lib/postgresql/data
+
   auth-service:
     build:
       context: .
@@ -120,9 +133,21 @@ services:
     # environment:
     #   SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payment:5432/paymentdb
 
+  inventory-service:
+    build:
+      context: .
+      dockerfile: inventory-service/Dockerfile
+    ports:
+      - "8086:8080"
+    depends_on:
+      - postgres-inventory
+    # environment:
+    #   SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-inventory:5432/inventorydb
+
 volumes:
   auth-db-data:
   product-db-data:
   order-db-data:
   cart-db-data:
   payment-db-data:
+  inventory-db-data:
