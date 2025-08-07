@@ -1,6 +1,7 @@
 package com.ecommerce.cart_service.service;
 
 import com.ecommerce.cart_service.repository.CartItemRepository;
+import com.ecommerce.cart_service.model.CartItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
