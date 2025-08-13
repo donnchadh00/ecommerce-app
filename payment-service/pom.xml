@@ -95,6 +95,12 @@
 			<artifactId>flyway-database-postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.amqp</groupId>
+			<artifactId>spring-rabbit</artifactId>
+			<version>3.2.6</version>
+		</dependency>
 	</dependencies>
 
 	<build>
