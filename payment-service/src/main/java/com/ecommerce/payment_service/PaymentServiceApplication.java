@@ -2,7 +2,9 @@ package com.ecommerce.payment_service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
+@EnableScheduling
 @SpringBootApplication(scanBasePackages = {
 	"com.ecommerce.payment_service",
 	"com.ecommerce.common"

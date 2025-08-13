@@ -1,5 +1,7 @@
 package com.ecommerce.order_service.model;
 
+import java.math.BigDecimal;
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
@@ -15,6 +17,7 @@ public class OrderItem {
 
     private Long productId;
     private Integer quantity;
+    private BigDecimal unitPrice;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")

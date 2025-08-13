@@ -1,5 +1,6 @@
 package com.ecommerce.product_service.model;
 
+import java.math.BigDecimal;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,6 +17,6 @@ public class Product {
 
     private String name;
     private String description;
-    private Double price;
+    private BigDecimal price;
     private Integer quantity;
 }

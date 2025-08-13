@@ -4,6 +4,7 @@ import com.ecommerce.payment_service.model.PaymentStatus;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -12,7 +13,7 @@ public class PaymentResponseDto {
     private Long id;
     private Long orderId;
     private Long userId;
-    private Double amount;
+    private BigDecimal amount;
     private String currency;
     private String provider;
     private String providerPaymentId;

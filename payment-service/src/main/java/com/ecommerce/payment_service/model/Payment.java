@@ -2,6 +2,8 @@ package com.ecommerce.payment_service.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -13,12 +15,12 @@ import java.time.LocalDateTime;
 public class Payment {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private Long orderId;
     private Long userId;
-    private Double amount;
+    private BigDecimal amount;
 
     private String currency;
     private String provider;

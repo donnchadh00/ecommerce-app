@@ -13,12 +13,14 @@ import java.util.ArrayList;
 @Entity
 @Table(name = "orders")
 public class Order {
-    @Id @GeneratedValue
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private Long userId;
 
-    private LocalDateTime createdAt = LocalDateTime.now();;
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    private String status; // e.g., "PENDING", "CONFIRMED", "CANCELLED"
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
