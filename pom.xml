@@ -24,6 +24,7 @@
         <module>payment-service</module>
         <module>inventory-service</module>
         <module>common-lib</module>
+        <module>events</module>
     </modules>
 
     <properties>
