@@ -16,6 +16,7 @@ import com.stripe.param.RefundCreateParams;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 @Service
@@ -29,7 +30,10 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentResponseDto initiatePayment(PaymentRequestDto dto) {
         try {
             PaymentIntent intent = stripePaymentService.createPaymentIntent(
-                (long) (dto.getAmount() * 100),
+                dto.getAmount()
+                .movePointRight(2)
+                .setScale(0, RoundingMode.HALF_UP)
+                .longValueExact(),
                 dto.getCurrency().toLowerCase()
             );
 
