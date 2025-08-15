@@ -1,13 +1,13 @@
 package com.ecommerce.product_service.controller;
 
 import com.ecommerce.product_service.model.Product;
-import com.ecommerce.product_service.repository.ProductRepository;
+import com.ecommerce.product_service.service.ProductService;
+import com.ecommerce.product_service.service.ProductService.ProductPriceDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -15,26 +15,23 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductController {
 
-    private final ProductRepository productRepository;
-
+    private final ProductService productService;
+    
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {
-        return ResponseEntity.ok(productRepository.findAll());
+        return ResponseEntity.ok(productService.getAll());
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create")
     public ResponseEntity<Product> createProduct(@RequestBody Product product) {
-        return ResponseEntity.ok(productRepository.save(product));
+        return ResponseEntity.ok(productService.create(product));
     }
 
     @PreAuthorize("hasAnyRole('INTERNAL', 'ADMIN')")
     @GetMapping("/prices")
     public List<ProductPriceDto> getPrices(@RequestParam("ids") List<Long> ids) {
-        return productRepository.findAllById(ids).stream()
-                .map(p -> new ProductPriceDto(p.getId(), p.getPrice()))
-                .toList();
+        return productService.getPricesByIds(ids);
     }
-    public record ProductPriceDto(Long id, BigDecimal price) {}
 }
