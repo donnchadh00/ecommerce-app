@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
@@ -25,6 +26,9 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<OrderItem> items = new ArrayList<>();
+
+    @Column(precision = 19, scale = 2)
+    private BigDecimal total;
 
     public void addItem(OrderItem item) {
         item.setOrder(this);

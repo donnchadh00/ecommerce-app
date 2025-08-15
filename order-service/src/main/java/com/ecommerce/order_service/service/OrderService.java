@@ -4,6 +4,7 @@ import com.ecommerce.order_service.model.Order;
 import com.ecommerce.order_service.model.OrderItem;
 import com.ecommerce.order_service.repository.OrderRepository;
 import com.ecommerce.order_service.outbox.EventOutbox;
+import com.ecommerce.order_service.client.ProductClient;
 
 import com.ecommerce.common.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final JwtService jwtService;
     private final EventOutbox eventOutbox;
+    private final ProductClient productClient;
 
     @Transactional
     public Order createOrder(Order order, HttpServletRequest request, String traceId) {
@@ -60,7 +62,27 @@ public class OrderService {
             item.setOrder(order);      // establish FK (order_id)
         }
 
-        // 4) Persist order + items (cascade)
+        // PRICING SNAPSHOT (call Product service)
+        var ids = order.getItems().stream().map(OrderItem::getProductId).toList();
+        var priceMap = productClient.getPricesByIds(ids);
+        if (priceMap == null || priceMap.isEmpty()) {
+            throw new IllegalStateException("Could not fetch product prices");
+        }
+
+        for (OrderItem item : order.getItems()) {
+            var price = priceMap.get(item.getProductId());
+            if (price == null) {
+                throw new IllegalArgumentException("Unknown product: " + item.getProductId());
+            }
+            item.setUnitPrice(price);
+        }
+
+        // 4) compute total and persist on the entity
+        BigDecimal total = order.getItems().stream()
+            .map(i -> i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        order.setTotal(total);
+
         Order saved = orderRepository.save(order);
 
         // 5) Build event payload (lines + total)
@@ -68,13 +90,11 @@ public class OrderService {
             .map(i -> new OrderPlaced.Line(String.valueOf(i.getProductId()), i.getQuantity()))
             .toList();
 
-        BigDecimal total = computeTotal(saved);
-
         OrderPlaced evt = new OrderPlaced(
             String.valueOf(saved.getId()),
             String.valueOf(userId),
             lines,
-            total
+            saved.getTotal()
         );
 
         // 6) Write to outbox inside the SAME TX
@@ -109,14 +129,5 @@ public class OrderService {
             var statusField = order.getClass().getMethod("setStatus", String.class);
             statusField.invoke(order, "PENDING");
         } catch (Exception ignored) {}
-    }
-
-    // Temp: Set price of all items to 10usd
-    private BigDecimal computeTotal(Order order) {
-        BigDecimal total = order.getItems().stream()
-            .map(i -> BigDecimal.valueOf(10).multiply(BigDecimal.valueOf(i.getQuantity())))
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        return total;
     }
 }
