@@ -1,6 +1,7 @@
 package com.ecommerce.cart_service.controller;
 
-import com.ecommerce.cart_service.model.CartItem;
+import com.ecommerce.cart_service.dto.CartItemRequest;
+import com.ecommerce.cart_service.dto.CartItemResponse;
 import com.ecommerce.cart_service.service.CartService;
 import com.ecommerce.common.security.JwtService;
 
@@ -23,22 +24,23 @@ public class CartController {
 
     @PostMapping("/add")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> addToCart(@RequestBody CartItem item, HttpServletRequest request) {
+    public ResponseEntity<CartItemResponse> addToCart(@RequestBody CartItemRequest requestDto, HttpServletRequest request) {
+        
         Long userId = jwtService.extractUserId(request.getHeader("Authorization"));
-        cartService.addItemToCart(userId, item);
-        return ResponseEntity.ok("Item added");
+        CartItemResponse response = cartService.addItemToCart(userId, requestDto);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping
     @PreAuthorize("hasRole('USER')")
-    public List<CartItem> getCart(HttpServletRequest request) {
+    public List<CartItemResponse> getCart(HttpServletRequest request) {
         Long userId = jwtService.extractUserId(request.getHeader("Authorization"));
         return cartService.getCartItemsByUser(userId);
     }
 
     @DeleteMapping("/remove")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> removeFromCart(@RequestParam Long productId, HttpServletRequest request) {
+    public ResponseEntity<String> removeFromCart(@RequestParam Long productId, HttpServletRequest request) {
         Long userId = jwtService.extractUserId(request.getHeader("Authorization"));
         cartService.removeItem(userId, productId);
         return ResponseEntity.ok("Item removed");
@@ -46,7 +48,7 @@ public class CartController {
 
     @DeleteMapping("/clear")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> removeFromCart(HttpServletRequest request) {
+    public ResponseEntity<String> removeFromCart(HttpServletRequest request) {
         Long userId = jwtService.extractUserId(request.getHeader("Authorization"));
         cartService.clearCart(userId);
         return ResponseEntity.ok("Cart cleared");
