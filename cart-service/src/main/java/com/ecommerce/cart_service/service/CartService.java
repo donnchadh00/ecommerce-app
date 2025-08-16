@@ -19,8 +19,16 @@ public class CartService {
 
     @Transactional
     public CartItemResponse addItemToCart(Long userId, CartItemRequest request) {
-        request.setUserId(userId);
-        CartItem entity = CartItemMapper.toEntity(request);
+        var existing = cartRepo.findByUserIdAndProductId(userId, request.getProductId());
+
+         CartItem entity = existing.map(ci -> {
+            int current = ci.getQuantity() == null ? 0 : ci.getQuantity();
+            ci.setQuantity(current + request.getQuantity());
+            return ci;
+        }).orElseGet(() -> {
+            request.setUserId(userId);
+            return CartItemMapper.toEntity(request);
+        });
         CartItem saved = cartRepo.save(entity);
         return CartItemMapper.toResponse(saved);
     }
