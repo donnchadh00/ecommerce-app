@@ -5,6 +5,7 @@ import com.ecommerce.cart_service.dto.CartItemRequest;
 import com.ecommerce.cart_service.dto.CartItemResponse;
 import com.ecommerce.cart_service.mapper.CartItemMapper;
 import com.ecommerce.cart_service.model.CartItem;
+import com.ecommerce.cart_service.client.ProductClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,12 +17,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CartService {
     private final CartItemRepository cartRepo;
+    private final ProductClient productClient;
 
     @Transactional
     public CartItemResponse addItemToCart(Long userId, CartItemRequest request) {
+        var productOpt = productClient.getProduct(request.getProductId());
+        if (productOpt.isEmpty()) {
+            throw new IllegalArgumentException("Product not found");
+        }        
         var existing = cartRepo.findByUserIdAndProductId(userId, request.getProductId());
-
-         CartItem entity = existing.map(ci -> {
+        CartItem entity = existing.map(ci -> {
             int current = ci.getQuantity() == null ? 0 : ci.getQuantity();
             ci.setQuantity(current + request.getQuantity());
             return ci;

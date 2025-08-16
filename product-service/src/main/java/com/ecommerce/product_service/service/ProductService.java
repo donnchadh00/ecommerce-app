@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -32,5 +33,27 @@ public class ProductService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public Optional<ProductSummaryDto> getProductById(Long id) {
+        return productRepository.findById(id)
+            .map(p -> new ProductSummaryDto(
+                p.getId(),
+                p.getName(),
+                p.getDescription(),
+                p.getPrice(),
+                "usd",
+                "ACTIVE"
+            ));
+    }
+
     public record ProductPriceDto(Long id, BigDecimal price) {}
+
+    public record ProductSummaryDto(
+            Long id,
+            String name,
+            String description,
+            BigDecimal price,
+            String currency,
+            String status // e.g., "ACTIVE" | "INACTIVE"
+    ) {}
 }

@@ -3,6 +3,7 @@ package com.ecommerce.product_service.controller;
 import com.ecommerce.product_service.model.Product;
 import com.ecommerce.product_service.service.ProductService;
 import com.ecommerce.product_service.service.ProductService.ProductPriceDto;
+import com.ecommerce.product_service.service.ProductService.ProductSummaryDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,12 @@ public class ProductController {
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {
         return ResponseEntity.ok(productService.getAll());
+    }
+
+    @PreAuthorize("hasAnyRole('INTERNAL','ADMIN')")
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductSummaryDto> getById(@PathVariable Long id) {
+        return ResponseEntity.of(productService.getProductById(id));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
