@@ -8,4 +8,14 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    proxy: {
+      '/api/auth': 'http://localhost:8081',
+      '/api/products': 'http://localhost:8082',
+      '/api/orders': 'http://localhost:8083',
+      '/api/cart': 'http://localhost:8084',
+      '/api/payments': 'http://localhost:8085',
+      '/api/inventory': 'http://localhost:8086',
+    }
+  }
 })
