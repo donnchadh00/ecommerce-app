@@ -1,4 +1,5 @@
 import { Link, Route, Routes } from 'react-router-dom';
+import CatalogPage from "./features/catalog/CatalogPage";
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,10 +17,6 @@ function Layout({ children }: { children: React.ReactNode }) {
       <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
     </div>
   );
-}
-
-function CatalogPage() {
-  return <h1 className="text-2xl font-bold">Catalog</h1>;
 }
 
 function CartPage() {
