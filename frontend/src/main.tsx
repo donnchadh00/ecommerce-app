@@ -7,6 +7,15 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import './index.css'
 import App from './App.tsx'
 
+if (import.meta.env.DEV) {
+  import("./dev/devLogin").then((m) => {
+    window.devLogin = m.devLogin;
+    window.devLogout = m.devLogout;
+    window.devWhoAmI = m.devWhoAmI;
+    console.info('[dev] Helpers available: devLogin(), devLogout(), devWhoAmI()');
+  });
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
