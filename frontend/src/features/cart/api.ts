@@ -58,3 +58,12 @@ export function useRemoveFromCart() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["cart"] }),
   });
 }
+
+export function useClearCart() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () =>
+      await api.delete(`${API.cart}/clear`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["cart"] }),
+  });
+}

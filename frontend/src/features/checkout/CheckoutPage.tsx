@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useCart } from "../../features/cart/api";
+import { useCart, useClearCart } from "../../features/cart/api";
 import { useProducts } from "../../features/catalog/useProducts";
 import { useCreateOrder, type OrderItemReq } from "./api";
 
@@ -8,6 +8,7 @@ export default function CheckoutPage() {
   const { data: cart } = useCart();
   const { data: products } = useProducts();
   const createOrder = useCreateOrder();
+  const clearCart = useClearCart();
 
   const byId = new Map((products ?? []).map((p: any) => [Number(p.id), p]));
   const rows = (cart ?? []).map((i) => {
@@ -25,6 +26,7 @@ export default function CheckoutPage() {
   const placeOrder = async () => {
     const items: OrderItemReq[] = rows.map(({ productId, quantity }) => ({ productId, quantity }));
     const res = await createOrder.mutateAsync(items);
+    try { await clearCart.mutateAsync(); } catch {}
     nav(`/order/${res.orderId}`, { state: { traceId: res.traceId } });
   };
 
