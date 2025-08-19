@@ -1,5 +1,6 @@
 import { useCart, useRemoveFromCart } from "./api";
 import { useProducts } from "../../features/catalog/useProducts";
+import { Link } from 'react-router-dom';
 
 export default function CartPage() {
   const { data: cart, isLoading: cartLoading, error: cartError } = useCart();
@@ -44,6 +45,14 @@ export default function CartPage() {
         </div>
       ))}
       <div className="text-right text-lg font-semibold">Total: ${total.toFixed(2)}</div>
+      <div className="flex justify-end">
+        <Link
+          to="/checkout"
+          className="rounded-lg bg-black px-4 py-2 text-white"
+        >
+          Go to checkout
+        </Link>
+      </div>
     </div>
   );
 }
