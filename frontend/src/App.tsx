@@ -1,6 +1,7 @@
 import { Link, Route, Routes } from 'react-router-dom';
 import CatalogPage from "./features/catalog/CatalogPage";
 import CartPage from './features/cart/CartPage';
+import CartBadge from './features/cart/CartBadge';
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -10,7 +11,9 @@ function Layout({ children }: { children: React.ReactNode }) {
           <Link to="/" className="font-semibold text-lg">E-Commerce</Link>
           <nav className="ml-auto flex items-center gap-4">
             <Link to="/" className="hover:underline">Catalog</Link>
-            <Link to="/cart" className="hover:underline">Cart</Link>
+            <Link to="/cart" className="hover:underline flex items-center">
+              Cart <CartBadge />
+            </Link>
             <Link to="/checkout" className="hover:underline">Checkout</Link>
           </nav>
         </div>
