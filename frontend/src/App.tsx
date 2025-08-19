@@ -4,6 +4,7 @@ import CartPage from './features/cart/CartPage';
 import CartBadge from './features/cart/CartBadge';
 import CheckoutPage from './features/checkout/CheckoutPage';
 import OrderConfirmationPage from './features/checkout/OrderConfirmationPage';
+import OrdersPage from './features/orders/OrderPage';
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ function Layout({ children }: { children: React.ReactNode }) {
           <Link to="/" className="font-semibold text-lg">E-Commerce</Link>
           <nav className="ml-auto flex items-center gap-4">
             <Link to="/" className="hover:underline">Catalog</Link>
+            <Link to="/orders" className="hover:underline">Orders</Link>
             <Link to="/cart" className="hover:underline flex items-center">
               Cart <CartBadge />
             </Link>
@@ -33,6 +35,7 @@ function App() {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/order/:id" element={<OrderConfirmationPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
       </Routes>
     </Layout>
   );
