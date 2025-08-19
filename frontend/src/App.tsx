@@ -2,6 +2,8 @@ import { Link, Route, Routes } from 'react-router-dom';
 import CatalogPage from "./features/catalog/CatalogPage";
 import CartPage from './features/cart/CartPage';
 import CartBadge from './features/cart/CartBadge';
+import CheckoutPage from './features/checkout/CheckoutPage';
+import OrderConfirmationPage from './features/checkout/OrderConfirmationPage';
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -23,10 +25,6 @@ function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-function CheckoutPage() {
-  return <h1 className="text-2xl font-bold">Checkout</h1>;
-}
-
 function App() {
   return (
     <Layout>
@@ -34,6 +32,7 @@ function App() {
         <Route path="/" element={<CatalogPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/order/:id" element={<OrderConfirmationPage />} />
       </Routes>
     </Layout>
   );
