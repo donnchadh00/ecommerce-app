@@ -8,6 +8,7 @@ import OrdersPage from './features/orders/OrderPage';
 import ProtectedRoute from "./features/auth/ProtectedRoute";
 import LoginPage from "./features/auth/LoginPage";
 import RegisterPage from "./features/auth/RegisterPage";
+import AuthMenu from "./features/auth/AuthMenu";
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -17,10 +18,10 @@ function Layout({ children }: { children: React.ReactNode }) {
           <Link to="/" className="font-semibold text-lg">E-Commerce</Link>
           <nav className="ml-auto flex items-center gap-4">
             <Link to="/" className="hover:underline">Catalog</Link>
-            <Link to="/orders" className="hover:underline">Orders</Link>
             <Link to="/cart" className="hover:underline flex items-center">
               Cart <CartBadge />
             </Link>
+            <AuthMenu />
             <Link to="/checkout" className="hover:underline">Checkout</Link>
           </nav>
         </div>
