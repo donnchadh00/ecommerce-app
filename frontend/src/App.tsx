@@ -5,6 +5,8 @@ import CartBadge from './features/cart/CartBadge';
 import CheckoutPage from './features/checkout/CheckoutPage';
 import OrderConfirmationPage from './features/checkout/OrderConfirmationPage';
 import OrdersPage from './features/orders/OrderPage';
+import LoginPage from "./features/auth/LoginPage";
+import RegisterPage from "./features/auth/RegisterPage";
 
 function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -36,6 +38,8 @@ function App() {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/order/:id" element={<OrderConfirmationPage />} />
         <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
       </Routes>
     </Layout>
   );
