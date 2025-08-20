@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'ecom-services'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - auth-service:8080
+          - product-service:8080
+          - cart-service:8080
+          - order-service:8080
+          - inventory-service:8080
+          - payment-service:8080
