@@ -29,6 +29,8 @@
 
     <properties>
         <java.version>21</java.version>
+        <otel.auto.version>1.33.2</otel.auto.version>
+        <logstash.encoder.version>7.4</logstash.encoder.version>
     </properties>
 
     <dependencyManagement>
