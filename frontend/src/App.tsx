@@ -5,6 +5,7 @@ import CartBadge from './features/cart/CartBadge';
 import CheckoutPage from './features/checkout/CheckoutPage';
 import OrderConfirmationPage from './features/checkout/OrderConfirmationPage';
 import OrdersPage from './features/orders/OrderPage';
+import ProtectedRoute from "./features/auth/ProtectedRoute";
 import LoginPage from "./features/auth/LoginPage";
 import RegisterPage from "./features/auth/RegisterPage";
 
@@ -35,9 +36,9 @@ function App() {
       <Routes>
         <Route path="/" element={<CatalogPage />} />
         <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
         <Route path="/order/:id" element={<OrderConfirmationPage />} />
-        <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Routes>
