@@ -130,6 +130,12 @@
 			<artifactId>logstash-logback-encoder</artifactId>
 			<version>${logstash.encoder.version}</version>
 		</dependency>
+
+		<dependency>
+			<groupId>com.ecommerce</groupId>
+			<artifactId>common-obs</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 
 	<build>
