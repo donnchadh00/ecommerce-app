@@ -1,4 +1,27 @@
 services:
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./observability/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:4317"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  tempo:
+    image: grafana/tempo:latest
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./observability/tempo.yaml:/etc/tempo.yaml:ro
+    networks: 
+      - ecommerce-network
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -188,8 +211,21 @@ services:
     depends_on:
       postgres-auth:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     networks:
       - ecommerce-network
+    environment:
+      OTEL_SERVICE_NAME: auth-service
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      OTEL_INSTRUMENTATION_LOGS_MDC_INJECTION: "true"
+      JAVA_TOOL_OPTIONS: "-javaagent:/otel/opentelemetry-javaagent.jar"
+    volumes:
+      - ./observability/opentelemetry-javaagent.jar:/otel/opentelemetry-javaagent.jar:ro
 
   product-service:
     build:
@@ -200,8 +236,21 @@ services:
     depends_on:
       postgres-product:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     networks:
       - ecommerce-network
+    environment:
+      OTEL_SERVICE_NAME: product-service
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      OTEL_INSTRUMENTATION_LOGS_MDC_INJECTION: "true"
+      JAVA_TOOL_OPTIONS: "-javaagent:/otel/opentelemetry-javaagent.jar"
+    volumes:
+      - ./observability/opentelemetry-javaagent.jar:/otel/opentelemetry-javaagent.jar:ro
 
   order-service:
     build:
@@ -214,8 +263,21 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     networks:
       - ecommerce-network
+    environment:
+      OTEL_SERVICE_NAME: order-service
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      OTEL_INSTRUMENTATION_LOGS_MDC_INJECTION: "true"
+      JAVA_TOOL_OPTIONS: "-javaagent:/otel/opentelemetry-javaagent.jar"
+    volumes:
+      - ./observability/opentelemetry-javaagent.jar:/otel/opentelemetry-javaagent.jar:ro
 
   cart-service:
     build:
@@ -226,8 +288,21 @@ services:
     depends_on:
       postgres-cart:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     networks:
       - ecommerce-network
+    environment:
+      OTEL_SERVICE_NAME: cart-service
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      OTEL_INSTRUMENTATION_LOGS_MDC_INJECTION: "true"
+      JAVA_TOOL_OPTIONS: "-javaagent:/otel/opentelemetry-javaagent.jar"
+    volumes:
+      - ./observability/opentelemetry-javaagent.jar:/otel/opentelemetry-javaagent.jar:ro
 
   payment-service:
     build:
@@ -240,8 +315,21 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     networks:
       - ecommerce-network
+    environment:
+      OTEL_SERVICE_NAME: payment-service
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      OTEL_INSTRUMENTATION_LOGS_MDC_INJECTION: "true"
+      JAVA_TOOL_OPTIONS: "-javaagent:/otel/opentelemetry-javaagent.jar"
+    volumes:
+      - ./observability/opentelemetry-javaagent.jar:/otel/opentelemetry-javaagent.jar:ro
 
   inventory-service:
     build:
@@ -254,8 +342,22 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     networks:
     - ecommerce-network
+    environment:
+      OTEL_SERVICE_NAME: product-service
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_METRICS_EXPORTER: none
+      OTEL_LOGS_EXPORTER: none
+      OTEL_INSTRUMENTATION_LOGS_MDC_INJECTION: "true"
+      JAVA_TOOL_OPTIONS: "-javaagent:/otel/opentelemetry-javaagent.jar"
+    volumes:
+      - ./observability/opentelemetry-javaagent.jar:/otel/opentelemetry-javaagent.jar:ro
+
 networks:
   ecommerce-network:
     driver: bridge
