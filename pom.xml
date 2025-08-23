@@ -25,6 +25,7 @@
         <module>inventory-service</module>
         <module>common-lib</module>
         <module>events</module>
+        <module>common-obs</module>
     </modules>
 
     <properties>
