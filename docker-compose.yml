@@ -1,4 +1,38 @@
 services:
+  k6:
+    image: grafana/k6:latest
+    container_name: k6
+    environment:
+      - AUTH_URL=http://auth-service:8080/api/auth
+      - PRODUCT_URL=http://product-service:8080/api/products
+      - CART_URL=http://cart-service:8080/api/cart
+      - ORDER_URL=http://order-service:8080/api/orders
+      - PAYMENT_URL=http://payment-service:8080/api/payments
+      - INVENTORY_URL=http://inventory-service:8080/api/inventory
+
+      - K6_PROMETHEUS_RW_SERVER_URL=http://prometheus:9090/api/v1/write
+      - K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM=false
+      - K6_PROMETHEUS_RW_PUSH_INTERVAL=15s
+    volumes:
+      - ./infra/load:/scripts:ro
+    command:
+      [
+        "run",
+        "--tag","app=ecommerce",
+        "--out","experimental-prometheus-rw",
+        "/scripts/checkout-login.js"
+      ]
+    depends_on:
+      - prometheus
+      - auth-service
+      - product-service
+      - cart-service
+      - order-service
+      - payment-service
+      - inventory-service
+    networks: 
+      - ecommerce-network
+
   otel-collector:
     image: otel/opentelemetry-collector:latest
     command: ["--config=/etc/otel-collector-config.yaml"]
@@ -27,6 +61,7 @@ services:
     container_name: prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-remote-write-receiver
     volumes:
       - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
