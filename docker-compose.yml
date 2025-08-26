@@ -1,4 +1,20 @@
 services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./infra/nginx:/etc/nginx/conf.d:ro
+    depends_on:
+      - auth-service
+      - product-service
+      - order-service
+      - cart-service
+      - payment-service
+      - inventory-service
+    networks:
+      - ecommerce-network
+
   k6:
     image: grafana/k6:latest
     container_name: k6
@@ -382,7 +398,7 @@ services:
     networks:
     - ecommerce-network
     environment:
-      OTEL_SERVICE_NAME: product-service
+      OTEL_SERVICE_NAME: inventory-service
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_TRACES_EXPORTER: otlp
