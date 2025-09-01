@@ -22,7 +22,7 @@ public class OutboxPublisher {
   private final RabbitTemplate rabbitTemplate;
   private final int batchSize = 10;
 
-  @Scheduled(fixedDelay = 5000)
+  @Scheduled(fixedDelay = 200)
   @Transactional
   public void publishBatch() {
     var rows = outboxRepository.fetchBatchForProcessing(PageRequest.of(0, batchSize));
