@@ -2,12 +2,13 @@ import http from 'k6/http';
 import { check, sleep, group, fail } from 'k6';
 import { Trend, Rate } from 'k6/metrics';
 
-const AUTH_URL      = __ENV.AUTH_URL      || 'http://auth-service:8080/api/auth';
-const PRODUCT_URL   = __ENV.PRODUCT_URL   || 'http://product-service:8080/api/products';
-const CART_URL      = __ENV.CART_URL      || 'http://cart-service:8080/api/cart';
-const ORDER_URL     = __ENV.ORDER_URL     || 'http://order-service:8080/api/orders';
+const BASE_URL      = __ENV.BASE_URL      || 'http://nginx:80';
+const AUTH_URL     = `${BASE_URL}/api/auth`;
+const PRODUCT_URL  = `${BASE_URL}/api/products`;
+const CART_URL     = `${BASE_URL}/api/cart`;
+const ORDER_URL    = `${BASE_URL}/api/orders`;
 
-const USER_EMAIL    = __ENV.USER_EMAIL || 'testUser@example.com';
+const USER_EMAIL    = __ENV.USER_EMAIL || '';
 const USER_PASSWORD = __ENV.USER_PASSWORD || 'mypassword';
 
 const flowCheckoutMs = new Trend('flow_checkout_ms');
@@ -23,13 +24,13 @@ export const options = {
     },
     checkout: {
       executor: 'ramping-arrival-rate',
-      startRate: 1, timeUnit: '1s',
+      startRate: 10, timeUnit: '1s',
       stages: [
-        { target: 5, duration: '60s' },
-        { target: 5, duration: '90s' },
+        { target: 50, duration: '60s' },
+        { target: 50, duration: '90s' },
         { target: 0, duration: '30s' },
       ],
-      preAllocatedVUs: 10, maxVUs: 30,
+      preAllocatedVUs: 20, maxVUs: 100,
     },
   },
   thresholds: {
