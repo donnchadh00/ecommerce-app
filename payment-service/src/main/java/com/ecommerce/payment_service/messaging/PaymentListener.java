@@ -8,9 +8,12 @@ import com.ecommerce.payment_service.service.StripePaymentService;
 
 import com.ecommerce.events.Envelope;
 import com.ecommerce.events.order.OrderPlaced;
+import com.ecommerce.events.order.OrderConfirmed;
+import com.ecommerce.events.order.OrderCancelled;
 import com.ecommerce.events.inventory.InventoryReserved;
-import com.ecommerce.events.payment.PaymentCaptured;
+import com.ecommerce.events.payment.PaymentAuthorized;
 import com.ecommerce.events.payment.PaymentFailed;
+import com.ecommerce.events.payment.PaymentCaptured;
 
 import com.stripe.exception.CardException;
 import com.stripe.exception.StripeException;
@@ -91,14 +94,15 @@ public class PaymentListener {
     });
   }
 
-  // When inventory is reserved, actually charge. Emit captured/failed.
+  // When inventory is reserved, authorize only. Emit authorized/failed.
   @RabbitListener(queues = "payment.inventory.reserved.q")
   public void onInventoryReserved(Envelope<InventoryReserved> env,
                                   @Header(name="traceId", required=false) String traceId) throws Exception {
     Long orderId = parseLong(env.data().orderId());
 
-    // Idempotent: already captured?
-    if (paymentRepository.existsByOrderIdAndStatus(orderId, PaymentStatus.SUCCESSFUL)) {
+    // Idempotent: already authorized or captured?
+    if (paymentRepository.existsByOrderIdAndStatus(orderId, PaymentStatus.AUTHORIZED) ||
+        paymentRepository.existsByOrderIdAndStatus(orderId, PaymentStatus.SUCCESSFUL)) {
       return;
     }
 
@@ -124,7 +128,6 @@ public class PaymentListener {
 
     // Validate amount outside tx
     if (snap.amount() == null || snap.amount().compareTo(BigDecimal.ZERO) <= 0) {
-      // Mark failed
       tx.execute(status -> {
         var p = paymentRepository.findById(snap.paymentId()).orElse(null);
         if (p != null && p.getStatus() != PaymentStatus.SUCCESSFUL) {
@@ -143,14 +146,17 @@ public class PaymentListener {
     String currency = snap.currency();
 
     try {
-      PaymentIntent intent = withPermit(() -> stripe.createPaymentIntent(cents, currency));
+      // Authorize only (manual capture), with idempotency
+      String idempotencyKey = "order-" + orderId + "-auth";
+      PaymentIntent intent = withPermit(() ->
+          stripe.createAuthIntent(cents, currency, idempotencyKey, String.valueOf(orderId)));
 
-      // Commit captured
+      // Commit AUTHORIZED
       tx.execute(status -> {
         var p = paymentRepository.findById(snap.paymentId()).orElse(null);
         if (p != null && p.getStatus() != PaymentStatus.SUCCESSFUL) {
           p.setProviderPaymentId(intent.getId());
-          p.setStatus(PaymentStatus.SUCCESSFUL);
+          p.setStatus(PaymentStatus.AUTHORIZED);
           p.setUpdatedAt(LocalDateTime.now());
           paymentRepository.save(p);
         }
@@ -158,8 +164,8 @@ public class PaymentListener {
       });
 
       // Outbox emit
-      outbox.save(String.valueOf(orderId), "payment.v1.captured",
-          new PaymentCaptured(String.valueOf(orderId), intent.getId(), snap.amount(), snap.currency()),
+      outbox.save(String.valueOf(orderId), "payment.v1.authorized",
+          new PaymentAuthorized(String.valueOf(orderId), intent.getId(), snap.amount(), snap.currency()),
           traceId);
 
     } catch (CardException ce) {
@@ -183,5 +189,77 @@ public class PaymentListener {
     } catch (Exception e) {
       throw e;
     }
+  }
+
+  // Capture later when the order is confirmed
+  @RabbitListener(queues = "payment.order.confirmed.q")
+  public void onOrderConfirmed(Envelope<OrderConfirmed> env,
+                              @Header(name="traceId", required=false) String traceId) throws Exception {
+    Long orderId = Long.valueOf(env.data().orderId());
+
+    // read the PaymentIntent id if we are AUTHORIZED (or still PENDING in edge cases)
+    String piId = tx.execute(s -> {
+      var p = paymentRepository.findByOrderId(orderId).orElse(null);
+      if (p == null) return null;
+      if (p.getProviderPaymentId() == null) return null;
+      if (p.getStatus() != PaymentStatus.AUTHORIZED && p.getStatus() != PaymentStatus.PENDING) return null;
+      return p.getProviderPaymentId();
+    });
+    if (piId == null) return;
+
+    var captured = withPermit(() -> stripe.capturePaymentIntent(piId));
+
+    // Mark SUCCESSFUL
+    tx.execute(s -> {
+      var p = paymentRepository.findByOrderId(orderId).orElse(null);
+      if (p != null && p.getStatus() != PaymentStatus.SUCCESSFUL) {
+        p.setStatus(PaymentStatus.SUCCESSFUL);
+        p.setUpdatedAt(LocalDateTime.now());
+        paymentRepository.save(p);
+      }
+      return null;
+    });
+
+    // Emit captured
+    var payment = paymentRepository.findByOrderId(orderId).orElse(null);
+    BigDecimal amt = (payment != null) ? payment.getAmount() : null;
+    String curr = (payment != null) ? payment.getCurrency() : null;
+
+    outbox.save(String.valueOf(orderId), "payment.v1.captured",
+        new PaymentCaptured(
+            String.valueOf(orderId), captured.getId(), amt, curr),
+        traceId);
+  }
+
+  // Void authorization if the order is cancelled before capture
+  @RabbitListener(queues = "payment.order.cancelled.q")
+  public void onOrderCancelled(Envelope<OrderCancelled> env,
+                              @Header(name="traceId", required=false) String traceId) throws Exception {
+    Long orderId = Long.valueOf(env.data().orderId());
+
+    // Fetch PI id
+    String piId = tx.execute(s -> {
+      var p = paymentRepository.findByOrderId(orderId).orElse(null);
+      return (p == null) ? null : p.getProviderPaymentId();
+    });
+    if (piId == null) return;
+
+    // Cancel PI (void auth)
+    PaymentIntent.retrieve(piId).cancel();
+
+    // Mark FAILED unless already SUCCESSFUL
+    tx.execute(s -> {
+      var p = paymentRepository.findByOrderId(orderId).orElse(null);
+      if (p != null && p.getStatus() != PaymentStatus.SUCCESSFUL) {
+        p.setStatus(PaymentStatus.FAILED);
+        p.setUpdatedAt(LocalDateTime.now());
+        paymentRepository.save(p);
+      }
+      return null;
+    });
+
+    outbox.save(String.valueOf(orderId), "payment.v1.failed",
+        new PaymentFailed(String.valueOf(orderId), "voided_on_cancel"),
+        traceId);
   }
 }
