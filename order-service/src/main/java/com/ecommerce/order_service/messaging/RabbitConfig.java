@@ -20,19 +20,19 @@ public class RabbitConfig {
     @Bean TopicExchange eventsExchange() { return new TopicExchange(EXCHANGE, true, false); }
     @Bean DirectExchange dlx() { return new DirectExchange("ecommerce.dlx"); }
 
-    // payment.captured -> order-service
-    @Bean Queue orderPaymentCapturedQ() {
-        return QueueBuilder.durable("order.payment.captured.q")
+    // payment.v1.authorized -> order-service
+    @Bean Queue orderPaymentAuthorizedQ() {
+        return QueueBuilder.durable("order.payment.authorized.q")
             .withArgument("x-dead-letter-exchange","ecommerce.dlx")
-            .withArgument("x-dead-letter-routing-key","order.payment.captured.dlq")
+            .withArgument("x-dead-letter-routing-key","order.payment.authorized.dlq")
             .build();
     }
-    @Bean Binding bindOrderPaymentCaptured(TopicExchange eventsExchange, Queue orderPaymentCapturedQ) {
-        return BindingBuilder.bind(orderPaymentCapturedQ).to(eventsExchange).with("payment.*.captured");
+    @Bean Binding bindOrderPaymentAuthorized(TopicExchange eventsExchange, Queue orderPaymentAuthorizedQ) {
+        return BindingBuilder.bind(orderPaymentAuthorizedQ).to(eventsExchange).with("payment.*.authorized");
     }
-    @Bean Queue orderPaymentCapturedDlq() { return QueueBuilder.durable("order.payment.captured.dlq").build(); }
-    @Bean Binding bindOrderPaymentCapturedDlq(DirectExchange dlx, Queue orderPaymentCapturedDlq) {
-        return BindingBuilder.bind(orderPaymentCapturedDlq).to(dlx).with("order.payment.captured.dlq");
+    @Bean Queue orderPaymentAuthorizedDlq() { return QueueBuilder.durable("order.payment.authorized.dlq").build(); }
+    @Bean Binding bindOrderPaymentAuthorizedDlq(DirectExchange dlx, Queue orderPaymentAuthorizedDlq) {
+        return BindingBuilder.bind(orderPaymentAuthorizedDlq).to(dlx).with("order.payment.authorized.dlq");
     }
 
     // payment.failed -> order-service

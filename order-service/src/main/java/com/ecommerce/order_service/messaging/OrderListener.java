@@ -8,8 +8,8 @@ import com.ecommerce.events.inventory.InventoryRejected;
 import com.ecommerce.events.inventory.InventoryReserved;
 import com.ecommerce.events.order.OrderCancelled;
 import com.ecommerce.events.order.OrderConfirmed;
-import com.ecommerce.events.payment.PaymentCaptured;
 import com.ecommerce.events.payment.PaymentFailed;
+import com.ecommerce.events.payment.PaymentAuthorized;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -25,9 +25,9 @@ public class OrderListener {
     private final EventOutbox outbox;
 
     @Transactional
-    @RabbitListener(queues = "order.payment.captured.q")
-    public void onPaymentCaptured(Envelope<PaymentCaptured> env,
-                                  @Header(name="traceId", required=false) String traceId) throws Exception {
+    @RabbitListener(queues = "order.payment.authorized.q")
+    public void onPaymentAuthorized(Envelope<PaymentAuthorized> env,
+                                    @Header(name="traceId", required=false) String traceId) throws Exception {
         var orderId = env.data().orderId();
         var order = orderRepository.findById(Long.valueOf(orderId)).orElse(null);
         if (order == null) return;
