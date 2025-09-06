@@ -52,6 +52,40 @@ public class RabbitConfig {
     return BindingBuilder.bind(paymentInventoryReservedDlq).to(dlx).with("payment.inventory.reserved.dlq");
   }
 
+  // order.v1.confirmed -> payment-service (to capture)
+  @Bean Queue paymentOrderConfirmedQ() {
+    return QueueBuilder.durable("payment.order.confirmed.q")
+        .withArgument("x-dead-letter-exchange", "ecommerce.dlx")
+        .withArgument("x-dead-letter-routing-key", "payment.order.confirmed.dlq")
+        .build();
+  }
+  @Bean Binding bindPaymentOrderConfirmed(TopicExchange eventsExchange, Queue paymentOrderConfirmedQ) {
+    return BindingBuilder.bind(paymentOrderConfirmedQ)
+        .to(eventsExchange).with("order.*.confirmed");
+  }
+  @Bean Queue paymentOrderConfirmedDlq() { return QueueBuilder.durable("payment.order.confirmed.dlq").build(); }
+  @Bean Binding bindPaymentOrderConfirmedDlq(DirectExchange dlx, Queue paymentOrderConfirmedDlq) {
+    return BindingBuilder.bind(paymentOrderConfirmedDlq)
+        .to(dlx).with("payment.order.confirmed.dlq");
+  }
+
+  // order.v1.cancelled -> payment-service (to void)
+  @Bean Queue paymentOrderCancelledQ() {
+    return QueueBuilder.durable("payment.order.cancelled.q")
+        .withArgument("x-dead-letter-exchange", "ecommerce.dlx")
+        .withArgument("x-dead-letter-routing-key", "payment.order.cancelled.dlq")
+        .build();
+  }
+  @Bean Binding bindPaymentOrderCancelled(TopicExchange eventsExchange, Queue paymentOrderCancelledQ) {
+    return BindingBuilder.bind(paymentOrderCancelledQ)
+        .to(eventsExchange).with("order.*.cancelled");
+  }
+  @Bean Queue paymentOrderCancelledDlq() { return QueueBuilder.durable("payment.order.cancelled.dlq").build(); }
+  @Bean Binding bindPaymentOrderCancelledDlq(DirectExchange dlx, Queue paymentOrderCancelledDlq) {
+    return BindingBuilder.bind(paymentOrderCancelledDlq)
+        .to(dlx).with("payment.order.cancelled.dlq");
+  }
+
   @Bean
   public MessageConverter messageConverter() {
       var conv = new Jackson2JsonMessageConverter();
