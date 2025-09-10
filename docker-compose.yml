@@ -266,6 +266,8 @@ services:
         condition: service_started
     networks:
       - ecommerce-network
+    deploy:
+      replicas: 2
     environment:
       OTEL_SERVICE_NAME: auth-service
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
@@ -291,6 +293,8 @@ services:
         condition: service_started
     networks:
       - ecommerce-network
+    deploy:
+      replicas: 3
     environment:
       OTEL_SERVICE_NAME: product-service
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
@@ -318,6 +322,8 @@ services:
         condition: service_started
     networks:
       - ecommerce-network
+    deploy:
+      replicas: 2
     environment:
       OTEL_SERVICE_NAME: order-service
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
@@ -343,6 +349,8 @@ services:
         condition: service_started
     networks:
       - ecommerce-network
+    deploy:
+      replicas: 2
     environment:
       OTEL_SERVICE_NAME: cart-service
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
@@ -370,6 +378,8 @@ services:
         condition: service_started
     networks:
       - ecommerce-network
+    deploy:
+      replicas: 4
     environment:
       OTEL_SERVICE_NAME: payment-service
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
@@ -397,6 +407,8 @@ services:
         condition: service_started
     networks:
     - ecommerce-network
+    deploy:
+      replicas: 2
     environment:
       OTEL_SERVICE_NAME: inventory-service
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
