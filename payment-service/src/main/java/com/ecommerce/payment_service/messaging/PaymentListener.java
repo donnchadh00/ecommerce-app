@@ -8,7 +8,7 @@ import com.ecommerce.payment_service.service.StripePaymentService;
 
 import com.ecommerce.events.Envelope;
 import com.ecommerce.events.order.OrderPlaced;
-import com.ecommerce.events.order.OrderConfirmed;
+// import com.ecommerce.events.order.OrderConfirmed;
 import com.ecommerce.events.order.OrderCancelled;
 import com.ecommerce.events.inventory.InventoryReserved;
 import com.ecommerce.events.payment.PaymentAuthorized;
@@ -18,11 +18,13 @@ import com.ecommerce.events.payment.PaymentCaptured;
 import com.stripe.exception.CardException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
+import com.stripe.param.PaymentIntentCaptureParams;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.Headers;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -64,7 +66,10 @@ public class PaymentListener {
   }
 
   // OrderPlaced → stage a PENDING payment
-  @RabbitListener(queues = "payment.order.placed.q")
+  @RabbitListener(
+    queues = "payment.order.placed.q",
+    containerFactory = "fastListenerFactory"
+  )
   public void onOrderPlaced(Envelope<OrderPlaced> env, 
                             @Header(name="traceId", required=false) String traceId) {
     var order = env.data();
@@ -95,7 +100,10 @@ public class PaymentListener {
   }
 
   // When inventory is reserved, authorize only. Emit authorized/failed.
-  @RabbitListener(queues = "payment.inventory.reserved.q")
+  @RabbitListener(
+    queues = "payment.inventory.reserved.q",
+    containerFactory = "stripeAuthListenerFactory"
+  )
   public void onInventoryReserved(Envelope<InventoryReserved> env,
                                   @Header(name="traceId", required=false) String traceId) throws Exception {
     Long orderId = parseLong(env.data().orderId());
@@ -191,25 +199,47 @@ public class PaymentListener {
     }
   }
 
-  // Capture later when the order is confirmed
-  @RabbitListener(queues = "payment.order.confirmed.q")
-  public void onOrderConfirmed(Envelope<OrderConfirmed> env,
+  @RabbitListener(
+    queues = "payment.order.confirmed.q", 
+    containerFactory = "stripeCaptureListenerFactory"
+  )
+  public void onOrderConfirmed(Envelope<com.ecommerce.events.order.OrderConfirmed> env,
                               @Header(name="traceId", required=false) String traceId) throws Exception {
     Long orderId = Long.valueOf(env.data().orderId());
 
-    // read the PaymentIntent id if we are AUTHORIZED (or still PENDING in edge cases)
+    // get PI id safely
     String piId = tx.execute(s -> {
       var p = paymentRepository.findByOrderId(orderId).orElse(null);
-      if (p == null) return null;
-      if (p.getProviderPaymentId() == null) return null;
-      if (p.getStatus() != PaymentStatus.AUTHORIZED && p.getStatus() != PaymentStatus.PENDING) return null;
-      return p.getProviderPaymentId();
+      return (p == null) ? null : p.getProviderPaymentId();
     });
-    if (piId == null) return;
+    if (piId == null || piId.isBlank()) {
+      log.warn("capture skip: no providerPaymentId for order={}", orderId);
+      return; // ACK & skip, don't DLQ
+    }
 
-    var captured = withPermit(() -> stripe.capturePaymentIntent(piId));
+    // tiny retry around Stripe capture (2 quick tries)
+    PaymentIntent captured = null;
+    Exception last = null;
+    for (int i=0; i<2; i++) {
+      try {
+        var pi = PaymentIntent.retrieve(piId);
+        if (!"succeeded".equalsIgnoreCase(pi.getStatus())) {
+          pi = pi.capture(PaymentIntentCaptureParams.builder().build());
+        }
+        captured = pi;
+        break;
+      } catch (Exception e) {
+        last = e;
+        Thread.sleep(200L * (i+1)); // simple backoff
+      }
+    }
+    if (captured == null) {
+      // log and DLQ only after final failure
+      log.error("capture fail order={} pi={}", orderId, piId, last);
+      throw last;
+    }
 
-    // Mark SUCCESSFUL
+    // mark SUCCESSFUL if not already
     tx.execute(s -> {
       var p = paymentRepository.findByOrderId(orderId).orElse(null);
       if (p != null && p.getStatus() != PaymentStatus.SUCCESSFUL) {
@@ -220,19 +250,15 @@ public class PaymentListener {
       return null;
     });
 
-    // Emit captured
-    var payment = paymentRepository.findByOrderId(orderId).orElse(null);
-    BigDecimal amt = (payment != null) ? payment.getAmount() : null;
-    String curr = (payment != null) ? payment.getCurrency() : null;
-
     outbox.save(String.valueOf(orderId), "payment.v1.captured",
-        new PaymentCaptured(
-            String.valueOf(orderId), captured.getId(), amt, curr),
-        traceId);
+        new PaymentCaptured(String.valueOf(orderId), captured.getId(), null, null), traceId);
   }
 
   // Void authorization if the order is cancelled before capture
-  @RabbitListener(queues = "payment.order.cancelled.q")
+  @RabbitListener(
+    queues = "payment.order.cancelled.q",
+    containerFactory = "fastListenerFactory"
+  )
   public void onOrderCancelled(Envelope<OrderCancelled> env,
                               @Header(name="traceId", required=false) String traceId) throws Exception {
     Long orderId = Long.valueOf(env.data().orderId());
@@ -261,5 +287,17 @@ public class PaymentListener {
     outbox.save(String.valueOf(orderId), "payment.v1.failed",
         new PaymentFailed(String.valueOf(orderId), "voided_on_cancel"),
         traceId);
+  }
+
+  @RabbitListener(queues = "payment.inventory.reserved.dlq")
+  public void authDlq(byte[] body, @Headers java.util.Map<String,Object> h) {
+    System.err.println("[DLQ auth] reason=" + h.get("x-first-death-reason")
+        + " exc=" + h.get("x-exception-message"));
+  }
+
+  @RabbitListener(queues = "payment.order.confirmed.dlq")
+  public void capDlq(byte[] body, @Headers java.util.Map<String,Object> h) {
+    System.err.println("[DLQ capture] reason=" + h.get("x-first-death-reason")
+        + " exc=" + h.get("x-exception-message"));
   }
 }

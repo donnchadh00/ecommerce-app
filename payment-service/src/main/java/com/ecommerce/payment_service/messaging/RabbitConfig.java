@@ -8,9 +8,7 @@ import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.support.converter.MessageConverter;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 
 @Configuration
@@ -92,12 +90,5 @@ public class RabbitConfig {
       var mapper = (org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper) conv.getJavaTypeMapper();
       mapper.setTrustedPackages("com.ecommerce.*");
       return conv;
-  }
-
-  @Bean
-  public RabbitTemplate rabbitTemplate(ConnectionFactory cf, MessageConverter mc) {
-  RabbitTemplate tpl = new RabbitTemplate(cf);
-  tpl.setMessageConverter(mc);
-  return tpl;
   }
 }
