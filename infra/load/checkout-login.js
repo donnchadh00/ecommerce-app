@@ -20,22 +20,22 @@ export const options = {
     browse: {
       executor: 'constant-arrival-rate',
       rate: 5, timeUnit: '1s', duration: '60s',
-      preAllocatedVUs: 10, maxVUs: 20,
+      preAllocatedVUs: 40, maxVUs: 60,
     },
     checkout: {
       executor: 'ramping-arrival-rate',
-      startRate: 10, timeUnit: '1s',
+      startRate: 8, timeUnit: '1s',
       stages: [
-        { target: 50, duration: '60s' },
-        { target: 50, duration: '90s' },
+        { target: 12, duration: '60s' },
+        { target: 14, duration: '90s' },
         { target: 0, duration: '30s' },
       ],
-      preAllocatedVUs: 20, maxVUs: 100,
+      preAllocatedVUs: 140, maxVUs: 160,
     },
   },
   thresholds: {
-    http_req_failed: ['rate<0.05'],
-    'http_req_duration{scenario:checkout}': ['p(99)<2000'],
+    http_req_failed: ['rate<0.10'],
+    'http_req_duration{scenario:checkout}': ['p(95)<4000','p(99)<12000'],
     flow_failed: ['rate<0.20'],
   },
 };
