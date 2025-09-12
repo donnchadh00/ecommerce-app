@@ -1,6 +1,7 @@
 package com.ecommerce.cart_service.client;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -8,7 +9,9 @@ import org.springframework.http.HttpHeaders;
 
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
-import java.util.Optional;
+
+import java.time.Duration;
+import java.util.*;
 
 @Component
 @RequiredArgsConstructor
@@ -22,18 +25,26 @@ public class ProductClient {
     @Value("${product.internal.token}")
     private String internalToken;
 
+    @Cacheable(
+        value = "productById",
+        key = "#productId",
+        unless = "#result == null || (T(java.util.Optional).class.isInstance(#result) && #result.isEmpty())"
+    )
     public Optional<ProductDto> getProduct(Long productId) {
     return webClientBuilder.build()
         .get()
         .uri(productServiceUrl + "/api/products/{id}", productId)
-        .header(HttpHeaders.AUTHORIZATION, "Bearer " + internalToken)
+        .headers(h -> {
+            if (!internalToken.isBlank()) h.add(HttpHeaders.AUTHORIZATION, "Bearer " + internalToken);
+            h.add(HttpHeaders.CONNECTION, "keep-alive");
+        })
         .retrieve()
         .bodyToMono(ProductDto.class)
         .map(Optional::of)
-        .onErrorResume(WebClientResponseException.NotFound.class,
-                       e -> Mono.just(Optional.<ProductDto>empty()))
+        .onErrorResume(WebClientResponseException.NotFound.class, e -> Mono.just(Optional.<ProductDto>empty()))
+        .timeout(Duration.ofSeconds(3))
         .block();
-}
+    }
 
-    public record ProductDto(Long id, String name, String currency, String status) {}
+    public record ProductDto(Long id, String name, String currency, String status, String sku, Long priceCents) {}
 }
