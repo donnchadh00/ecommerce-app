@@ -5,11 +5,15 @@ import com.ecommerce.product_service.service.ProductService;
 import com.ecommerce.product_service.service.ProductService.ProductPriceDto;
 import com.ecommerce.product_service.service.ProductService.ProductSummaryDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/products")
@@ -27,7 +31,24 @@ public class ProductController {
     @PreAuthorize("hasAnyRole('INTERNAL','ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<ProductSummaryDto> getById(@PathVariable Long id) {
-        return ResponseEntity.of(productService.getProductById(id));
+        return productService.getProductById(id)
+            .map(dto -> {
+                var etag = productService.computeEtag(dto);
+                return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(Duration.ofSeconds(60)).cachePublic())
+                    .eTag(etag)
+                    .body(dto);
+            })
+            .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
+
+    @PreAuthorize("hasAnyRole('INTERNAL','ADMIN')")
+    @GetMapping("/bulk")
+    public ResponseEntity<Map<Long, ProductSummaryDto>> getBulk(@RequestParam("ids") List<Long> ids) {
+        var result = productService.getSummariesByIds(ids);
+        return ResponseEntity.ok()
+            .cacheControl(CacheControl.maxAge(Duration.ofSeconds(60)).cachePublic())
+            .body(result);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -38,7 +59,10 @@ public class ProductController {
 
     @PreAuthorize("hasAnyRole('INTERNAL', 'ADMIN')")
     @GetMapping("/prices")
-    public List<ProductPriceDto> getPrices(@RequestParam("ids") List<Long> ids) {
-        return productService.getPricesByIds(ids);
+    public ResponseEntity<List<ProductPriceDto>> getPrices(@RequestParam("ids") List<Long> ids) {
+        var result = productService.getPricesByIds(ids);
+        return ResponseEntity.ok()
+            .cacheControl(CacheControl.maxAge(Duration.ofSeconds(60)).cachePublic())
+            .body(result);
     }
 }
