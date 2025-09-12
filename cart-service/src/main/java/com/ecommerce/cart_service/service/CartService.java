@@ -7,6 +7,8 @@ import com.ecommerce.cart_service.mapper.CartItemMapper;
 import com.ecommerce.cart_service.model.CartItem;
 import com.ecommerce.cart_service.client.ProductClient;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,18 +26,34 @@ public class CartService {
         var productOpt = productClient.getProduct(request.getProductId());
         if (productOpt.isEmpty()) {
             throw new IllegalArgumentException("Product not found");
-        }        
-        var existing = cartRepo.findByUserIdAndProductId(userId, request.getProductId());
-        CartItem entity = existing.map(ci -> {
-            int current = ci.getQuantity() == null ? 0 : ci.getQuantity();
-            ci.setQuantity(current + request.getQuantity());
-            return ci;
-        }).orElseGet(() -> {
-            request.setUserId(userId);
-            return CartItemMapper.toEntity(request);
-        });
-        CartItem saved = cartRepo.save(entity);
-        return CartItemMapper.toResponse(saved);
+        }
+        int tries = 0;
+        while (true) {
+        try {        
+            var existing = cartRepo.findByUserIdAndProductId(userId, request.getProductId());
+            CartItem entity = existing.map(ci -> {
+                int current = ci.getQuantity() == null ? 0 : ci.getQuantity();
+                ci.setQuantity(current + request.getQuantity());
+                return ci;
+            }).orElseGet(() -> {
+                request.setUserId(userId);
+                return CartItemMapper.toEntity(request);
+            });
+            CartItem saved = cartRepo.save(entity);
+            return CartItemMapper.toResponse(saved);
+        } catch (DataAccessException e) {
+            if (++tries <= 2) {
+                try {
+                    Thread.sleep(100L * tries);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(ie);
+                }
+            } else {
+                throw e;
+            }
+        }
+        }
     }
 
     @Transactional
