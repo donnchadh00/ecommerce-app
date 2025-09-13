@@ -325,6 +325,7 @@ services:
     deploy:
       replicas: 1
     environment:
+      PRODUCT_INTERNAL_TOKEN: ${PRODUCT_INTERNAL_TOKEN}
       OTEL_SERVICE_NAME: order-service
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
@@ -352,6 +353,7 @@ services:
     deploy:
       replicas: 2
     environment:
+      PRODUCT_INTERNAL_TOKEN: ${PRODUCT_INTERNAL_TOKEN}
       OTEL_SERVICE_NAME: cart-service
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
@@ -381,6 +383,7 @@ services:
     deploy:
       replicas: 2
     environment:
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       OTEL_SERVICE_NAME: payment-service
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
