@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cart-service
+  namespace: ecommerce
+spec:
+  selector: { app: cart-service }
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart-service
+  namespace: ecommerce
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: cart-service } }
+  template:
+    metadata: { labels: { app: cart-service } }
+    spec:
+      containers:
+        - name: cart-service
+          image: ecommerce/cart-service:latest
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 8080 }]
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres-cart.ecommerce.svc.cluster.local:5432/cartdb
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom: { secretKeyRef: { name: app-secrets, key: POSTGRES_USER } }
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom: { secretKeyRef: { name: app-secrets, key: POSTGRES_PASSWORD } }
+            - name: PRODUCT_INTERNAL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: PRODUCT_INTERNAL_TOKEN
