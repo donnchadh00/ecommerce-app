@@ -22,8 +22,8 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: ecommerce/order-service:latest
-          imagePullPolicy: IfNotPresent
+          image: donnchadh00/order-service:latest
+          imagePullPolicy: Always
           ports: [{ containerPort: 8080 }]
           env:
             - name: SPRING_DATASOURCE_URL

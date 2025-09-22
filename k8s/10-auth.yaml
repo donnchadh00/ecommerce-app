@@ -27,8 +27,8 @@ spec:
     spec:
       containers:
         - name: auth-service
-          image: ecommerce/auth-service:latest
-          imagePullPolicy: IfNotPresent
+          image: donnchadh00/auth-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           env:

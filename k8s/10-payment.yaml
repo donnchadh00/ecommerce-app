@@ -22,8 +22,8 @@ spec:
     spec:
       containers:
         - name: payment-service
-          image: ecommerce/payment-service:latest
-          imagePullPolicy: IfNotPresent
+          image: donnchadh00/payment-service:latest
+          imagePullPolicy: Always
           ports: [{ containerPort: 8080 }]
           env:
             - name: SPRING_DATASOURCE_URL
