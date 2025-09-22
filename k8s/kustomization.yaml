@@ -1,0 +1,26 @@
+namespace: ecommerce
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+secretGenerator:
+  - name: app-secrets
+    envs:
+      - ../.env
+    type: Opaque
+
+resources:
+  - 02-rabbitmq.yaml
+  - 03-postgres-auth.yaml
+  - 03-postgres-cart.yaml
+  - 03-postgres-inventory.yaml
+  - 03-postgres-order.yaml
+  - 03-postgres-payment.yaml
+  - 03-postgres-product.yaml
+  - 10-auth.yaml
+  - 10-cart.yaml
+  - 10-inventory.yaml
+  - 10-order.yaml
+  - 10-payment.yaml
+  - 10-product.yaml
+  - 90-ingress.yaml
