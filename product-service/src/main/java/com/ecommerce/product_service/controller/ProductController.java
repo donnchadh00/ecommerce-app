@@ -1,9 +1,11 @@
 package com.ecommerce.product_service.controller;
 
-import com.ecommerce.product_service.model.Product;
+import com.ecommerce.product_service.dto.ProductCreateRequest;
+import com.ecommerce.product_service.dto.ProductResponse;
 import com.ecommerce.product_service.service.ProductService;
 import com.ecommerce.product_service.service.ProductService.ProductPriceDto;
 import com.ecommerce.product_service.service.ProductService.ProductSummaryDto;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
@@ -24,7 +26,7 @@ public class ProductController {
     
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
+    public ResponseEntity<List<ProductResponse>> getAllProducts() {
         return ResponseEntity.ok(productService.getAll());
     }
 
@@ -53,8 +55,8 @@ public class ProductController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create")
-    public ResponseEntity<Product> createProduct(@RequestBody Product product) {
-        return ResponseEntity.ok(productService.create(product));
+    public ResponseEntity<ProductResponse> createProduct(@Valid @RequestBody ProductCreateRequest request) {
+        return ResponseEntity.ok(productService.create(request));
     }
 
     @PreAuthorize("hasAnyRole('INTERNAL', 'ADMIN')")

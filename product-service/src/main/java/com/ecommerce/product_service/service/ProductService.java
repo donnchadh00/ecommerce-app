@@ -1,5 +1,7 @@
 package com.ecommerce.product_service.service;
 
+import com.ecommerce.product_service.dto.ProductCreateRequest;
+import com.ecommerce.product_service.dto.ProductResponse;
 import com.ecommerce.product_service.model.Product;
 import com.ecommerce.product_service.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +21,22 @@ public class ProductService {
     private final ProductRepository productRepository;
 
     @Transactional(readOnly = true)
-    public List<Product> getAll() {
-        return productRepository.findAll();
+    public List<ProductResponse> getAll() {
+        return productRepository.findAll().stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     @Transactional
-    public Product create(Product product) {
-        return productRepository.save(product);
+    public ProductResponse create(ProductCreateRequest request) {
+        Product product = Product.builder()
+                .name(request.name())
+                .description(request.description())
+                .price(request.price())
+                .quantity(request.quantity())
+                .build();
+
+        return toResponse(productRepository.save(product));
     }
 
     @Transactional(readOnly = true)
@@ -58,6 +69,16 @@ public class ProductService {
             p.getPrice(),
             "usd",
             "ACTIVE"
+        );
+    }
+
+    private ProductResponse toResponse(Product product) {
+        return new ProductResponse(
+                product.getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                product.getQuantity()
         );
     }
 
