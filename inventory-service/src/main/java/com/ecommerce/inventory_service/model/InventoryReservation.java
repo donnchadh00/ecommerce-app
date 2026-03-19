@@ -25,7 +25,7 @@ public class InventoryReservation {
     private Integer qty;
 
     @Column(nullable = false)
-    private String status; // PENDING | RESERVED | RELEASED | REJECTED
+    private String status; // PENDING | RESERVED | RELEASED | REJECTED | CONSUMED
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

@@ -12,8 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
-import java.util.UUID;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -62,6 +62,9 @@ public class InventoryServiceImpl implements InventoryService {
         if (!existing.isEmpty() && existing.stream().allMatch(r -> "RESERVED".equals(r.getStatus()))) {
             return true;
         }
+        if (!existing.isEmpty() && existing.stream().allMatch(r -> "CONSUMED".equals(r.getStatus()))) {
+            return true;
+        }
         if (!existing.isEmpty() && existing.stream().anyMatch(r -> "REJECTED".equals(r.getStatus()))) {
             return false;
         }
@@ -90,6 +93,44 @@ public class InventoryServiceImpl implements InventoryService {
             upsertReservation(orderId, Long.valueOf(l.productId()), l.qty(), "RESERVED");
         }
         return true;
+    }
+
+    @Override
+    @Transactional
+    public void confirm(String orderId) {
+        var reservations = reservationRepository.findByOrderId(orderId);
+        if (reservations.isEmpty()) return;
+
+        var reserved = reservations.stream()
+            .filter(r -> "RESERVED".equals(r.getStatus()))
+            .toList();
+        if (reserved.isEmpty()) return;
+
+        var productIds = reserved.stream()
+            .map(InventoryReservation::getProductId)
+            .toList();
+        var stocks = inventoryRepository.lockAllByProductIds(productIds);
+        var stockByProduct = new HashMap<Long, Inventory>();
+        stocks.forEach(stock -> stockByProduct.put(stock.getProductId(), stock));
+
+        for (var reservation : reserved) {
+            var inventory = stockByProduct.get(reservation.getProductId());
+            if (inventory == null) {
+                throw new IllegalStateException("Missing inventory for product " + reservation.getProductId());
+            }
+            if (inventory.getQuantity() < reservation.getQty()) {
+                throw new IllegalStateException("Reserved stock no longer available for product " + reservation.getProductId());
+            }
+        }
+
+        for (var reservation : reserved) {
+            var inventory = stockByProduct.get(reservation.getProductId());
+            inventory.setQuantity(inventory.getQuantity() - reservation.getQty());
+            inventoryRepository.save(inventory);
+
+            reservation.setStatus("CONSUMED");
+            reservationRepository.save(reservation);
+        }
     }
 
     @Override

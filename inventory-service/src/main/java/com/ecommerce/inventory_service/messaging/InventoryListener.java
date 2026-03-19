@@ -6,6 +6,8 @@ import com.ecommerce.inventory_service.service.InventoryService;
 import com.ecommerce.events.Envelope;
 import com.ecommerce.events.inventory.InventoryRejected;
 import com.ecommerce.events.inventory.InventoryReserved;
+import com.ecommerce.events.order.OrderCancelled;
+import com.ecommerce.events.order.OrderConfirmed;
 import com.ecommerce.events.order.OrderPlaced;
 
 import lombok.RequiredArgsConstructor;
@@ -35,4 +37,13 @@ public class InventoryListener {
         }
     }
 
+    @RabbitListener(queues = "inventory.order.confirmed.q")
+    public void onOrderConfirmed(Envelope<OrderConfirmed> env) {
+        inventoryService.confirm(env.data().orderId());
+    }
+
+    @RabbitListener(queues = "inventory.order.cancelled.q")
+    public void onOrderCancelled(Envelope<OrderCancelled> env) {
+        inventoryService.release(env.data().orderId());
+    }
 }

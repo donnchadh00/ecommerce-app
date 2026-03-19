@@ -14,5 +14,6 @@ public interface InventoryService {
 
     // saga-related
     boolean tryReserve(String orderId, List<OrderPlaced.Line> lines);
-    void release(String orderId); 
+    void confirm(String orderId);
+    void release(String orderId);
 }
