@@ -6,6 +6,7 @@ import com.ecommerce.auth_service.dto.AuthResponse;
 import com.ecommerce.common.security.JwtService;
 import com.ecommerce.auth_service.model.User;
 import com.ecommerce.auth_service.repository.UserRepository;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -29,14 +30,14 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
-        if (userRepository.findByEmail(request.email).isPresent()) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+        if (userRepository.findByEmail(request.email()).isPresent()) {
             return ResponseEntity.badRequest().body("User already exists");
         }
 
         User user = new User();
-        user.setEmail(request.email);
-        user.setPassword(passwordEncoder.encode(request.password));
+        user.setEmail(request.email());
+        user.setPassword(passwordEncoder.encode(request.password()));
         user.setRole("USER");
 
         userRepository.save(user);
@@ -45,23 +46,23 @@ public class AuthController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/create-user")
-    public ResponseEntity<?> createUser(@RequestBody RegisterRequest request) {
-        if (userRepository.findByEmail(request.email).isPresent()) {
+    public ResponseEntity<?> createUser(@Valid @RequestBody RegisterRequest request) {
+        if (userRepository.findByEmail(request.email()).isPresent()) {
             return ResponseEntity.badRequest().body("User already exists");
         }
 
         User user = new User();
-        user.setEmail(request.email);
-        user.setPassword(passwordEncoder.encode(request.password));
-        user.setRole(request.role != null ? request.role : "USER");
+        user.setEmail(request.email());
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setRole(normalizeRole(request.role()));
         
         userRepository.save(user);
         return ResponseEntity.ok("User created successfully");
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        var userOptional = userRepository.findByEmail(request.email);
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+        var userOptional = userRepository.findByEmail(request.email());
 
         if (userOptional.isEmpty()) {
             return ResponseEntity.status(401).body("Invalid credentials");
@@ -69,7 +70,7 @@ public class AuthController {
 
         var user = userOptional.get();
 
-        if (!passwordEncoder.matches(request.password, user.getPassword())) {
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             return ResponseEntity.status(401).body("Invalid credentials");
         }
 
@@ -86,6 +87,10 @@ public class AuthController {
     @GetMapping("/admin/only")
     public ResponseEntity<?> adminOnly() {
         return ResponseEntity.ok("Welcome, Admin!");
+    }
+
+    private String normalizeRole(String role) {
+        return role == null || role.isBlank() ? "USER" : role.trim().toUpperCase();
     }
 
 }

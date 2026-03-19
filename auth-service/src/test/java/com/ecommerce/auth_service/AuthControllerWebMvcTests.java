@@ -136,4 +136,38 @@ class AuthControllerWebMvcTests {
         verify(userRepository).save(any(User.class));
     }
 
+    @Test
+    void registerRejectsInvalidPayload() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "email": "not-an-email",
+                      "password": "short"
+                    }
+                    """))
+            .andExpect(status().isBadRequest());
+
+        verify(userRepository, never()).findByEmail(any());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void createUserRejectsUnsupportedRole() throws Exception {
+        mockMvc.perform(post("/api/auth/create-user")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {
+                      "email": "staff@demo.local",
+                      "password": "Password123!",
+                      "role": "SUPER_ADMIN"
+                    }
+                    """))
+            .andExpect(status().isBadRequest());
+
+        verify(userRepository, never()).findByEmail(any());
+        verify(userRepository, never()).save(any(User.class));
+    }
+
 }
