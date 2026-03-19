@@ -1,5 +1,7 @@
 package com.ecommerce.order_service.service;
 
+import com.ecommerce.order_service.dto.OrderCreateRequest;
+import com.ecommerce.order_service.dto.OrderResponse;
 import com.ecommerce.order_service.model.Order;
 import com.ecommerce.order_service.model.OrderItem;
 import com.ecommerce.order_service.repository.OrderRepository;
@@ -29,7 +31,9 @@ public class OrderService {
     private final ProductClient productClient;
 
     @Transactional
-    public Order createOrder(Order order, HttpServletRequest request, String traceId) {
+    public OrderResponse createOrder(OrderCreateRequest requestDto, HttpServletRequest request, String traceId) {
+        Order order = toEntity(requestDto);
+
         // 1) Resolve userId (prefer JWT; fallback to payload if present)
         Long userId = null;
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
@@ -39,7 +43,7 @@ public class OrderService {
             } catch (Exception ignored) {}
         }
         if (userId == null) {
-            userId = order.getUserId(); // fallback during local testing
+            userId = requestDto.userId(); // fallback during local testing
         }
         if (userId == null) {
             throw new IllegalArgumentException("userId is required (JWT or request body)");
@@ -105,21 +109,25 @@ public class OrderService {
             traceId
         );
 
-        return saved;
+        return toResponse(saved);
     }
 
 
     @Transactional(readOnly = true)
-    public List<Order> getOrdersForUser(HttpServletRequest request) {
+    public List<OrderResponse> getOrdersForUser(HttpServletRequest request) {
         String token = request.getHeader("Authorization");
         Long userId = jwtService.extractUserId(token);
 
-        return orderRepository.findByUserId(userId);
+        return orderRepository.findByUserId(userId).stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
+    public List<OrderResponse> getAllOrders() {
+        return orderRepository.findAll().stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     // helpers
@@ -129,5 +137,44 @@ public class OrderService {
             var statusField = order.getClass().getMethod("setStatus", String.class);
             statusField.invoke(order, "PENDING");
         } catch (Exception ignored) {}
+    }
+
+    private Order toEntity(OrderCreateRequest request) {
+        Order order = new Order();
+        order.setUserId(request.userId());
+        order.setItems(new ArrayList<>());
+
+        if (request.items() != null) {
+            for (OrderCreateRequest.OrderItemRequest itemRequest : request.items()) {
+                OrderItem item = new OrderItem();
+                item.setProductId(itemRequest.productId());
+                item.setQuantity(itemRequest.quantity());
+                order.addItem(item);
+            }
+        }
+
+        return order;
+    }
+
+    private OrderResponse toResponse(Order order) {
+        List<OrderResponse.OrderItemResponse> items = order.getItems() == null
+                ? List.of()
+                : order.getItems().stream()
+                .map(item -> new OrderResponse.OrderItemResponse(
+                        item.getId(),
+                        item.getProductId(),
+                        item.getQuantity(),
+                        item.getUnitPrice()
+                ))
+                .toList();
+
+        return new OrderResponse(
+                order.getId(),
+                order.getUserId(),
+                order.getCreatedAt(),
+                order.getStatus(),
+                order.getTotal(),
+                items
+        );
     }
 }
