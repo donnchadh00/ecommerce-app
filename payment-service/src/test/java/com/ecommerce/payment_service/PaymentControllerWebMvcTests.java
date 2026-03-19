@@ -50,7 +50,7 @@ class PaymentControllerWebMvcTests {
     @Test
     @WithMockUser(roles = "USER")
     void createPaymentAcceptsValidatedRequestDto() throws Exception {
-        when(paymentService.initiatePayment(any(PaymentRequestDto.class))).thenReturn(paymentResponse(41L, PaymentStatus.SUCCESSFUL));
+        when(paymentService.initiatePayment(any(PaymentRequestDto.class))).thenReturn(paymentResponse(41L, PaymentStatus.AUTHORIZED));
 
         mockMvc.perform(post("/api/payments")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -65,7 +65,7 @@ class PaymentControllerWebMvcTests {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(41))
             .andExpect(jsonPath("$.orderId").value(101))
-            .andExpect(jsonPath("$.status").value("SUCCESSFUL"));
+            .andExpect(jsonPath("$.status").value("AUTHORIZED"));
     }
 
     @Test

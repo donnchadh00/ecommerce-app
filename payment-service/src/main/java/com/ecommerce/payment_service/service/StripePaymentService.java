@@ -2,9 +2,11 @@ package com.ecommerce.payment_service.service;
 
 import com.stripe.Stripe;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.Refund;
 import com.stripe.net.RequestOptions;
 import com.stripe.param.PaymentIntentCaptureParams;
 import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.param.RefundCreateParams;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,21 +53,15 @@ public class StripePaymentService {
         return pi.capture(PaymentIntentCaptureParams.builder().build());
     }
 
-    public PaymentIntent createPaymentIntent(Long amountInCents, String currency) throws Exception {
-        PaymentIntentCreateParams.AutomaticPaymentMethods automaticPaymentMethods =
-            PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
-                .setEnabled(true)
-                .setAllowRedirects(PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
-                .build();
+    public PaymentIntent voidPaymentIntent(String paymentIntentId) throws Exception {
+        PaymentIntent pi = PaymentIntent.retrieve(paymentIntentId);
+        return pi.cancel();
+    }
 
-        PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-            .setAmount(amountInCents)
-            .setCurrency(currency.toLowerCase())
-            .setPaymentMethod("pm_card_visa")  // test method
-            .setConfirm(true)
-            .setAutomaticPaymentMethods(automaticPaymentMethods)
+    public Refund refundCapturedPaymentIntent(String paymentIntentId) throws Exception {
+        RefundCreateParams refundParams = RefundCreateParams.builder()
+            .setPaymentIntent(paymentIntentId)
             .build();
-
-        return PaymentIntent.create(params);
+        return Refund.create(refundParams);
     }
 }
