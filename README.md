@@ -75,6 +75,8 @@ Key properties:
 4. Fill in at least:
 
    ```env
+   JWT_SECRET=change-me-local-dev-jwt-secret-32bytes-min
+   JWT_EXPIRATION_MS=36000000
    PRODUCT_INTERNAL_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
    STRIPE_SECRET_KEY=
    POSTGRES_USER=user
@@ -84,7 +86,8 @@ Key properties:
    RABBITMQ_PASSWORD=admin123
    ```
 
-   `PRODUCT_INTERNAL_TOKEN` is pre-populated in `.env.example` with a demo-safe internal JWT so cart/order can call product-service locally.
+   `JWT_SECRET` is now required by every service that issues or validates JWTs.
+   `PRODUCT_INTERNAL_TOKEN` in `.env.example` is pre-signed with a local demo secret so cart/order can call product-service out of the box.
 
 5. Start the stack:
 

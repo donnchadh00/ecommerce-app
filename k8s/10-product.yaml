@@ -32,3 +32,7 @@ spec:
               valueFrom: { secretKeyRef: { name: app-secrets, key: POSTGRES_USER } }
             - name: SPRING_DATASOURCE_PASSWORD
               valueFrom: { secretKeyRef: { name: app-secrets, key: POSTGRES_PASSWORD } }
+            - name: JWT_SECRET
+              valueFrom: { secretKeyRef: { name: app-secrets, key: JWT_SECRET } }
+            - name: JWT_EXPIRATION_MS
+              valueFrom: { secretKeyRef: { name: app-secrets, key: JWT_EXPIRATION_MS } }

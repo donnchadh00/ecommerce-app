@@ -2,6 +2,8 @@ package com.ecommerce.common.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.WeakKeyException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -12,11 +14,18 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    private static final String SECRET_KEY = "mysecretkeymysecretkeymysecretkeymysecretkey"; // 256-bit
-    private static final long EXPIRATION_TIME = 1000L * 60 * 60 * 10; // 10 hours
+    private final Key signingKey;
+    private final long expirationTimeMs;
+
+    public JwtService(
+            @Value("${JWT_SECRET}") String secretKey,
+            @Value("${JWT_EXPIRATION_MS:36000000}") long expirationTimeMs) {
+        this.signingKey = buildSigningKey(secretKey);
+        this.expirationTimeMs = expirationTimeMs;
+    }
 
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+        return signingKey;
     }
 
     /* ===================== Token generation ===================== */
@@ -31,7 +40,7 @@ public class JwtService {
                 .setClaims(claims)
                 .setSubject(email)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .setExpiration(new Date(System.currentTimeMillis() + expirationTimeMs))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -106,6 +115,19 @@ public class JwtService {
 
     private String cleanToken(String token) {
         return token == null ? "" : token.replace("Bearer ", "").trim();
+    }
+
+    private Key buildSigningKey(String secretKey) {
+        String normalized = secretKey == null ? "" : secretKey.trim();
+        if (normalized.isEmpty()) {
+            throw new IllegalStateException("JWT_SECRET must be configured");
+        }
+
+        try {
+            return Keys.hmacShaKeyFor(normalized.getBytes(StandardCharsets.UTF_8));
+        } catch (WeakKeyException ex) {
+            throw new IllegalStateException("JWT_SECRET must be at least 32 bytes for HS256", ex);
+        }
     }
 
     private List<String> normalizeRoles(List<String> roles) {
