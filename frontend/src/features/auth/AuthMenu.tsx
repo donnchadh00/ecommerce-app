@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "./useAuth";
 import { userDisplayName } from "./displayName";
 import { useState, useRef, useEffect } from "react";
 

@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useCart, useClearCart } from "../../features/cart/api";
-import { useProducts } from "../../features/catalog/useProducts";
+import { useProducts, type Product } from "../../features/catalog/useProducts";
 import { useCreateOrder, type OrderItemReq } from "./api";
 
 export default function CheckoutPage() {
@@ -10,7 +10,7 @@ export default function CheckoutPage() {
   const createOrder = useCreateOrder();
   const clearCart = useClearCart();
 
-  const byId = new Map((products ?? []).map((p: any) => [Number(p.id), p]));
+  const byId = new Map<number, Product>((products ?? []).map((p) => [Number(p.id), p]));
   const rows = (cart ?? []).map((i) => {
     const p = byId.get(Number(i.productId));
     return {
@@ -26,7 +26,11 @@ export default function CheckoutPage() {
   const placeOrder = async () => {
     const items: OrderItemReq[] = rows.map(({ productId, quantity }) => ({ productId, quantity }));
     const res = await createOrder.mutateAsync(items);
-    try { await clearCart.mutateAsync(); } catch {}
+    try {
+      await clearCart.mutateAsync();
+    } catch (error) {
+      console.warn("Order was placed, but clearing the cart failed.", error);
+    }
     nav(`/order/${res.orderId}`, { state: { traceId: res.traceId } });
   };
 

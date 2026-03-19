@@ -1,5 +1,6 @@
 import { useCart, useRemoveFromCart } from "./api";
 import { useProducts } from "../../features/catalog/useProducts";
+import type { Product } from "../../features/catalog/useProducts";
 import { Link } from 'react-router-dom';
 
 export default function CartPage() {
@@ -11,7 +12,7 @@ export default function CartPage() {
   if (cartError || prodError) return <div className="text-red-600">Failed to load cart/products</div>;
   if (!cart?.length) return <div>Your cart is empty.</div>;
 
-  const byId = new Map(products?.map((p: any) => [Number(p.id), p]));
+  const byId = new Map<number, Product>((products ?? []).map((p) => [Number(p.id), p]));
   const rows = cart.map((i) => {
     const p = byId.get(Number(i.productId));
     return {

@@ -2,7 +2,7 @@ export type User = {
   id?: number;
   email?: string;
   roles?: string[];
-  raw?: Record<string, any>;
+  raw?: Record<string, unknown>;
 };
 
 export function parseJwt(token: string | null): User | null {
