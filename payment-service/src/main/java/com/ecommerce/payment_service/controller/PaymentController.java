@@ -3,6 +3,7 @@ package com.ecommerce.payment_service.controller;
 import com.ecommerce.payment_service.dto.PaymentRequestDto;
 import com.ecommerce.payment_service.dto.PaymentResponseDto;
 import com.ecommerce.payment_service.service.PaymentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,7 +18,7 @@ public class PaymentController {
 
     @PreAuthorize("hasRole('USER')")
     @PostMapping
-    public ResponseEntity<PaymentResponseDto> createPayment(@RequestBody PaymentRequestDto dto) {
+    public ResponseEntity<PaymentResponseDto> createPayment(@Valid @RequestBody PaymentRequestDto dto) {
         return ResponseEntity.ok(paymentService.initiatePayment(dto));
     }
 

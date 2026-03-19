@@ -12,10 +12,10 @@ public class PaymentMapper {
 
     public static Payment toEntity(PaymentRequestDto dto) {
         return Payment.builder()
-            .orderId(dto.getOrderId())
-            .userId(dto.getUserId())
-            .amount(dto.getAmount())
-            .currency(dto.getCurrency())
+            .orderId(dto.orderId())
+            .userId(dto.userId())
+            .amount(dto.amount())
+            .currency(dto.currency())
             .provider("mock")
             .providerPaymentId(UUID.randomUUID().toString())
             .status(PaymentStatus.SUCCESSFUL)

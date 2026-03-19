@@ -30,18 +30,18 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentResponseDto initiatePayment(PaymentRequestDto dto) {
         try {
             PaymentIntent intent = stripePaymentService.createPaymentIntent(
-                dto.getAmount()
+                dto.amount()
                 .movePointRight(2)
                 .setScale(0, RoundingMode.HALF_UP)
                 .longValueExact(),
-                dto.getCurrency().toLowerCase()
+                dto.currency().toLowerCase()
             );
 
             Payment payment = Payment.builder()
-                .orderId(dto.getOrderId())
-                .userId(dto.getUserId())
-                .amount(dto.getAmount())
-                .currency(dto.getCurrency())
+                .orderId(dto.orderId())
+                .userId(dto.userId())
+                .amount(dto.amount())
+                .currency(dto.currency())
                 .provider("stripe")
                 .providerPaymentId(intent.getId())
                 .status(PaymentStatus.SUCCESSFUL)
