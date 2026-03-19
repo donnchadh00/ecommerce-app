@@ -23,7 +23,7 @@ public class CartController {
     private final JwtService jwtService;
 
     @PostMapping("/add")
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<CartItemResponse> addToCart(@RequestBody CartItemRequest requestDto, HttpServletRequest request) {
         
         Long userId = jwtService.extractUserId(request.getHeader("Authorization"));
@@ -32,14 +32,14 @@ public class CartController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public List<CartItemResponse> getCart(HttpServletRequest request) {
         Long userId = jwtService.extractUserId(request.getHeader("Authorization"));
         return cartService.getCartItemsByUser(userId);
     }
 
     @DeleteMapping("/remove")
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<String> removeFromCart(@RequestParam Long productId, HttpServletRequest request) {
         Long userId = jwtService.extractUserId(request.getHeader("Authorization"));
         cartService.removeItem(userId, productId);
@@ -47,7 +47,7 @@ public class CartController {
     }
 
     @DeleteMapping("/clear")
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<String> removeFromCart(HttpServletRequest request) {
         Long userId = jwtService.extractUserId(request.getHeader("Authorization"));
         cartService.clearCart(userId);
