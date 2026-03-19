@@ -1,26 +1,7 @@
 # Ecommerce Platform
 
 A microservices-based ecommerce application built with Spring Boot, React, RabbitMQ, Postgres, and Kubernetes.
-It demonstrates saga orchestration for order workflows, idempotent event handling, and observability with logs, metrics, and traces.
-
-## Demo
-
-After `docker compose up --build`, the repo boots with:
-
-- seeded admin account: `admin@demo.local` / `Admin123!`
-- seeded products in the catalog
-- frontend-ready API paths through the Nginx gateway
-
-That makes it possible to log in, browse products, add items to cart, and exercise the order workflow without manual database setup.
-
-## Features
-
-- User authentication with JWT
-- Product catalog and shopping cart
-- Order placement with saga orchestration
-- Payment authorization and capture flow
-- Observability with Prometheus, Grafana, OpenTelemetry, and Tempo
-- Local deployment via Docker Compose and Kubernetes manifests
+It uses asynchronous order processing, idempotent event handling, and observability with logs, metrics, and traces.
 
 ## Architecture
 
@@ -39,17 +20,13 @@ Shared modules:
 - `events`: event contracts for RabbitMQ
 - `common-obs`: JSON logging, correlation IDs, and observability wiring
 
-## Saga Flow
-
-Order workflows are coordinated across services using RabbitMQ and the Saga pattern.
+## Order Flow
 
 1. Order Service persists the order and writes `order.v1.placed` to its outbox.
 2. Inventory Service reserves or rejects stock.
 3. Payment Service authorizes payment after inventory reservation.
 4. Order Service confirms or cancels the order based on downstream events.
 5. Payment Service captures or voids the Stripe payment as the workflow progresses.
-
-Key properties:
 
 - asynchronous event-driven communication
 - idempotent listeners and outbox publishing
@@ -95,6 +72,12 @@ Key properties:
    docker compose up --build
    ```
 
+   This starts the stack with:
+
+   - seeded admin account: `admin@demo.local` / `Admin123!`
+   - seeded products in the catalog
+   - frontend-ready API paths through the Nginx gateway
+
 6. Access the local services:
 
 - App gateway: [http://localhost:8080](http://localhost:8080)
@@ -102,7 +85,7 @@ Key properties:
 - Grafana: [http://localhost:3000](http://localhost:3000)
 - Prometheus: [http://localhost:9090](http://localhost:9090)
 
-7. Demo flow:
+7. Run through the app:
 
 - register a normal user, or
 - log in as `admin@demo.local` / `Admin123!`
