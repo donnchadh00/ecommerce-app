@@ -72,18 +72,24 @@ Shared modules:
    docker compose up --build
    ```
 
-   This starts the stack with:
+   This starts the core local stack with:
 
    - seeded admin account: `admin@demo.local` / `Admin123!`
    - seeded products in the catalog
    - frontend-ready API paths through the Nginx gateway
 
+   Observability is opt-in so the default local stack stays lighter. To run Grafana, Prometheus, Tempo, and the OpenTelemetry collector as well:
+
+   ```bash
+   OTEL_JAVA_TOOL_OPTIONS=-javaagent:/otel/opentelemetry-javaagent.jar docker compose --profile observability up --build
+   ```
+
 6. Access the local services:
 
 - App gateway: [http://localhost:8080](http://localhost:8080)
 - RabbitMQ management: [http://localhost:15672](http://localhost:15672)
-- Grafana: [http://localhost:3000](http://localhost:3000)
-- Prometheus: [http://localhost:9090](http://localhost:9090)
+- Grafana: [http://localhost:3000](http://localhost:3000) when the `observability` profile is enabled
+- Prometheus: [http://localhost:9090](http://localhost:9090) when the `observability` profile is enabled
 
 7. Run through the app:
 
@@ -150,7 +156,7 @@ Access the ingress at [http://localhost](http://localhost).
 Run with Docker Compose:
 
 ```bash
-docker compose run --rm k6 run /scripts/checkout-login.js
+docker compose --profile loadtest run --rm k6 run /scripts/checkout-login.js
 ```
 
 Run against Kubernetes:
