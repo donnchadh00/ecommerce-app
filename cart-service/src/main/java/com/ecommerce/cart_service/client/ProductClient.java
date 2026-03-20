@@ -10,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.*;
 
@@ -46,5 +47,12 @@ public class ProductClient {
         .block();
     }
 
-    public record ProductDto(Long id, String name, String currency, String status, String sku, Long priceCents) {}
+    public record ProductDto(
+        Long id,
+        String name,
+        String description,
+        BigDecimal price,
+        String currency,
+        String status
+    ) {}
 }

@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessResourceFailureException;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,7 +44,7 @@ class CartServiceTests {
         CartItem saved = new CartItem(11L, 5L, 2, 44L);
 
         when(productClient.getProduct(5L)).thenReturn(Optional.of(
-            new ProductClient.ProductDto(5L, "Trail Shoes", "EUR", "ACTIVE", "SKU-5", 12999L)
+            new ProductClient.ProductDto(5L, "Trail Shoes", "Grip for wet ground", new BigDecimal("129.99"), "usd", "ACTIVE")
         ));
         when(cartRepo.findByUserIdAndProductId(44L, 5L)).thenReturn(Optional.empty());
         when(cartRepo.save(any(CartItem.class))).thenReturn(saved);
@@ -66,7 +67,7 @@ class CartServiceTests {
         CartItem updated = new CartItem(9L, 8L, 4, 12L);
 
         when(productClient.getProduct(8L)).thenReturn(Optional.of(
-            new ProductClient.ProductDto(8L, "Desk Lamp", "EUR", "ACTIVE", "SKU-8", 4999L)
+            new ProductClient.ProductDto(8L, "Desk Lamp", "Warm LED lamp", new BigDecimal("49.99"), "usd", "ACTIVE")
         ));
         when(cartRepo.findByUserIdAndProductId(12L, 8L)).thenReturn(Optional.of(existing));
         when(cartRepo.save(existing)).thenReturn(updated);
@@ -86,7 +87,7 @@ class CartServiceTests {
         CartItem saved = new CartItem(5L, 3L, 1, 77L);
 
         when(productClient.getProduct(3L)).thenReturn(Optional.of(
-            new ProductClient.ProductDto(3L, "Backpack", "EUR", "ACTIVE", "SKU-3", 7999L)
+            new ProductClient.ProductDto(3L, "Backpack", "Weatherproof", new BigDecimal("79.99"), "usd", "ACTIVE")
         ));
         when(cartRepo.findByUserIdAndProductId(77L, 3L)).thenReturn(Optional.empty());
         when(cartRepo.save(any(CartItem.class)))

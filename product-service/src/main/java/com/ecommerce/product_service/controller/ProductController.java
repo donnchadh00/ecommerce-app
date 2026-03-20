@@ -30,7 +30,6 @@ public class ProductController {
         return ResponseEntity.ok(productService.getAll());
     }
 
-    @PreAuthorize("hasAnyRole('INTERNAL','ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<ProductSummaryDto> getById(@PathVariable Long id) {
         return productService.getProductById(id)

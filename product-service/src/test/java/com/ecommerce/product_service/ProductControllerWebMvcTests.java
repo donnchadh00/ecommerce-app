@@ -102,8 +102,7 @@ class ProductControllerWebMvcTests {
     }
 
     @Test
-    @WithMockUser(roles = "INTERNAL")
-    void getByIdReturnsSummaryDtoForInternalConsumers() throws Exception {
+    void getByIdReturnsSummaryDtoForStorefrontConsumers() throws Exception {
         when(productService.getProductById(3L)).thenReturn(Optional.of(
                 new ProductService.ProductSummaryDto(3L, "Backpack", "Weatherproof", new BigDecimal("79.99"), "usd", "ACTIVE")
         ));
