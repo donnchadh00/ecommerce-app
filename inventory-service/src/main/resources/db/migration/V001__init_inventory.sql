@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS inventory_reservation (
   order_id    VARCHAR(64) NOT NULL,
   product_id  BIGINT NOT NULL,
   qty         INTEGER NOT NULL CHECK (qty > 0),
-  status      VARCHAR(32) NOT NULL,  -- PENDING | RESERVED | RELEASED | REJECTED | CONSUMED
+  status      VARCHAR(32) NOT NULL,  -- PENDING | RESERVED | RELEASED | REJECTED
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -25,4 +25,4 @@ CREATE INDEX IF NOT EXISTS ix_inv_res_order_id   ON inventory_reservation(order_
 -- Keep status constrained without a PG enum
 ALTER TABLE inventory_reservation
   ADD CONSTRAINT chk_inv_res_status
-  CHECK (status IN ('PENDING','RESERVED','RELEASED','REJECTED','CONSUMED'));
+  CHECK (status IN ('PENDING','RESERVED','RELEASED','REJECTED'));
