@@ -92,6 +92,7 @@ public class RabbitConfig {
     public RabbitTemplate rabbitTemplate(ConnectionFactory cf, MessageConverter mc) {
     RabbitTemplate tpl = new RabbitTemplate(cf);
     tpl.setMessageConverter(mc);
+    tpl.setObservationEnabled(true);
     return tpl;
     }
 }

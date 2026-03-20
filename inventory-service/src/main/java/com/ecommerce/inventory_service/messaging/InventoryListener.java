@@ -1,5 +1,6 @@
 package com.ecommerce.inventory_service.messaging;
 
+import com.ecommerce.common.trace.ConsumerTraceSpan;
 import com.ecommerce.inventory_service.outbox.EventOutbox;
 import com.ecommerce.inventory_service.service.InventoryService;
 
@@ -24,26 +25,54 @@ public class InventoryListener {
 
     @RabbitListener(queues = "inventory.order.placed.q")
     public void onOrderPlaced(Envelope<OrderPlaced> env,
-                            @Header(name="traceId", required=false) String traceId) {
-        var order = env.data();
-        boolean ok = inventoryService.tryReserve(order.orderId(), order.lines());
-        if (ok) {
-            var items = order.lines().stream()
-                .map(l -> new InventoryReserved.Item(l.productId(), l.qty()))
-                .toList();
-            outbox.save(order.orderId(), "inventory.v1.reserved", new InventoryReserved(order.orderId(), items), traceId);
-        } else {
-            outbox.save(order.orderId(), "inventory.v1.rejected", new InventoryRejected(order.orderId(), "insufficient_stock"), traceId);
-        }
+                            @Header(name="traceId", required=false) String traceId,
+                            @Header(name="traceparent", required=false) String traceparent) throws Exception {
+        ConsumerTraceSpan.run(
+            "inventory-service",
+            "inventory.order.placed",
+            "inventory.order.placed.q",
+            traceparent,
+            traceId,
+            () -> {
+                var order = env.data();
+                boolean ok = inventoryService.tryReserve(order.orderId(), order.lines());
+                if (ok) {
+                    var items = order.lines().stream()
+                        .map(l -> new InventoryReserved.Item(l.productId(), l.qty()))
+                        .toList();
+                    outbox.save(order.orderId(), "inventory.v1.reserved", new InventoryReserved(order.orderId(), items), traceId);
+                } else {
+                    outbox.save(order.orderId(), "inventory.v1.rejected", new InventoryRejected(order.orderId(), "insufficient_stock"), traceId);
+                }
+            }
+        );
     }
 
     @RabbitListener(queues = "inventory.order.confirmed.q")
-    public void onOrderConfirmed(Envelope<OrderConfirmed> env) {
-        inventoryService.confirm(env.data().orderId());
+    public void onOrderConfirmed(Envelope<OrderConfirmed> env,
+                                 @Header(name="traceId", required=false) String traceId,
+                                 @Header(name="traceparent", required=false) String traceparent) throws Exception {
+        ConsumerTraceSpan.run(
+            "inventory-service",
+            "inventory.order.confirmed",
+            "inventory.order.confirmed.q",
+            traceparent,
+            traceId,
+            () -> inventoryService.confirm(env.data().orderId())
+        );
     }
 
     @RabbitListener(queues = "inventory.order.cancelled.q")
-    public void onOrderCancelled(Envelope<OrderCancelled> env) {
-        inventoryService.release(env.data().orderId());
+    public void onOrderCancelled(Envelope<OrderCancelled> env,
+                                 @Header(name="traceId", required=false) String traceId,
+                                 @Header(name="traceparent", required=false) String traceparent) throws Exception {
+        ConsumerTraceSpan.run(
+            "inventory-service",
+            "inventory.order.cancelled",
+            "inventory.order.cancelled.q",
+            traceparent,
+            traceId,
+            () -> inventoryService.release(env.data().orderId())
+        );
     }
 }

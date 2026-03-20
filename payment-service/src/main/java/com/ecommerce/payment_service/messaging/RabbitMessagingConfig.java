@@ -29,6 +29,7 @@ public class RabbitMessagingConfig {
   public RabbitTemplate rabbitTemplate(ConnectionFactory cf, Jackson2JsonMessageConverter conv) {
     RabbitTemplate tpl = new RabbitTemplate(cf);
     tpl.setMessageConverter(conv);
+    tpl.setObservationEnabled(true);
     return tpl;
   }
 
@@ -44,6 +45,7 @@ public class RabbitMessagingConfig {
     f.setMaxConcurrentConsumers(36);
     f.setDefaultRequeueRejected(false);
     f.setMissingQueuesFatal(false);
+    f.setObservationEnabled(true);
     return f;
   }
 
@@ -59,6 +61,7 @@ public class RabbitMessagingConfig {
     f.setMaxConcurrentConsumers(32);
     f.setDefaultRequeueRejected(false);
     f.setMissingQueuesFatal(false);
+    f.setObservationEnabled(true);
     return f;
   }
 
@@ -74,6 +77,7 @@ public class RabbitMessagingConfig {
     f.setMaxConcurrentConsumers(16);
     f.setDefaultRequeueRejected(false);
     f.setMissingQueuesFatal(false);
+    f.setObservationEnabled(true);
     return f;
   }
 }

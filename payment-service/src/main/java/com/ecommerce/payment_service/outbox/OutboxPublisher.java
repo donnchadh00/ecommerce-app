@@ -1,5 +1,6 @@
 package com.ecommerce.payment_service.outbox; 
 
+import com.ecommerce.common.trace.TraceparentHeader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -38,6 +39,10 @@ public class OutboxPublisher {
             m -> {
               if (o.getTraceId() != null) {
                 m.getMessageProperties().setHeader("traceId", o.getTraceId());
+                String traceparent = TraceparentHeader.fromTraceId(o.getTraceId());
+                if (traceparent != null) {
+                  m.getMessageProperties().setHeader("traceparent", traceparent);
+                }
               }
               return m;
             }

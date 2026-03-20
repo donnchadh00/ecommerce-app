@@ -1,5 +1,6 @@
 package com.ecommerce.order_service.messaging;
 
+import com.ecommerce.common.trace.ConsumerTraceSpan;
 import com.ecommerce.order_service.repository.OrderRepository;
 import com.ecommerce.order_service.outbox.EventOutbox;
 
@@ -27,41 +28,78 @@ public class OrderListener {
     @Transactional
     @RabbitListener(queues = "order.payment.authorized.q")
     public void onPaymentAuthorized(Envelope<PaymentAuthorized> env,
-                                    @Header(name="traceId", required=false) String traceId) throws Exception {
-        var orderId = env.data().orderId();
-        var order = orderRepository.findById(Long.valueOf(orderId)).orElse(null);
-        if (order == null) return;
+                                    @Header(name="traceId", required=false) String traceId,
+                                    @Header(name="traceparent", required=false) String traceparent) throws Exception {
+        ConsumerTraceSpan.run(
+            "order-service",
+            "order.payment.authorized",
+            "order.payment.authorized.q",
+            traceparent,
+            traceId,
+            () -> {
+                var orderId = env.data().orderId();
+                var order = orderRepository.findById(Long.valueOf(orderId)).orElse(null);
+                if (order == null) return;
 
-        if (!"CONFIRMED".equalsIgnoreCase(order.getStatus())) {
-            order.setStatus("CONFIRMED");
-            orderRepository.save(order);
-            outbox.save(orderId, "order.v1.confirmed", new OrderConfirmed(orderId), traceId);
-        }
+                if (!"CONFIRMED".equalsIgnoreCase(order.getStatus())) {
+                    order.setStatus("CONFIRMED");
+                    orderRepository.save(order);
+                    outbox.save(orderId, "order.v1.confirmed", new OrderConfirmed(orderId), traceId);
+                }
+            }
+        );
     }
 
     @Transactional
     @RabbitListener(queues = "order.payment.failed.q")
     public void onPaymentFailed(Envelope<PaymentFailed> env,
-                                @Header(name="traceId", required=false) String traceId) throws Exception {
-        cancelIfNotFinal(env.data().orderId(), "payment_failed", traceId);
+                                @Header(name="traceId", required=false) String traceId,
+                                @Header(name="traceparent", required=false) String traceparent) throws Exception {
+        ConsumerTraceSpan.run(
+            "order-service",
+            "order.payment.failed",
+            "order.payment.failed.q",
+            traceparent,
+            traceId,
+            () -> cancelIfNotFinal(env.data().orderId(), "payment_failed", traceId)
+        );
     }
 
     @Transactional
     @RabbitListener(queues = "order.inventory.rejected.q")
     public void onInventoryRejected(Envelope<InventoryRejected> env,
-                                    @Header(name="traceId", required=false) String traceId) throws Exception {
-        cancelIfNotFinal(env.data().orderId(), "insufficient_stock", traceId);
+                                    @Header(name="traceId", required=false) String traceId,
+                                    @Header(name="traceparent", required=false) String traceparent) throws Exception {
+        ConsumerTraceSpan.run(
+            "order-service",
+            "order.inventory.rejected",
+            "order.inventory.rejected.q",
+            traceparent,
+            traceId,
+            () -> cancelIfNotFinal(env.data().orderId(), "insufficient_stock", traceId)
+        );
     }
 
     @Transactional
     @RabbitListener(queues = "order.inventory.reserved.q")
-    public void onInventoryReserved(Envelope<InventoryReserved> env) throws Exception {
-        var order = orderRepository.findById(Long.valueOf(env.data().orderId())).orElse(null);
-        if (order == null) return;
-        if (!"CONFIRMED".equalsIgnoreCase(order.getStatus())) {
-            order.setStatus("RESERVED");
-            orderRepository.save(order);
-        }
+    public void onInventoryReserved(Envelope<InventoryReserved> env,
+                                    @Header(name="traceId", required=false) String traceId,
+                                    @Header(name="traceparent", required=false) String traceparent) throws Exception {
+        ConsumerTraceSpan.run(
+            "order-service",
+            "order.inventory.reserved",
+            "order.inventory.reserved.q",
+            traceparent,
+            traceId,
+            () -> {
+                var order = orderRepository.findById(Long.valueOf(env.data().orderId())).orElse(null);
+                if (order == null) return;
+                if (!"CONFIRMED".equalsIgnoreCase(order.getStatus())) {
+                    order.setStatus("RESERVED");
+                    orderRepository.save(order);
+                }
+            }
+        );
     }
 
     private void cancelIfNotFinal(String orderId, String reason, String traceId) {
