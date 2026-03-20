@@ -49,6 +49,7 @@ public class OrderService {
             throw new IllegalArgumentException("userId is required (JWT or request body)");
         }
         order.setUserId(userId);
+        order.setTraceId(traceId);
 
         // 2) Ensure status defaults to PENDING (only if blank)
         trySetPending(order);
@@ -173,6 +174,7 @@ public class OrderService {
                 order.getUserId(),
                 order.getCreatedAt(),
                 order.getStatus(),
+                order.getTraceId(),
                 order.getTotal(),
                 items
         );

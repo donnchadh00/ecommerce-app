@@ -22,7 +22,12 @@ export default function OrdersPage() {
             </div>
             <div className="flex items-center gap-4">
               {o.total != null && <div className="font-medium">${Number(o.total).toFixed(2)}</div>}
-              <Link to={`/order/${o.id}`} className="underline">View</Link>
+              <Link
+                to={o.traceId ? `/order/${o.id}?traceId=${encodeURIComponent(o.traceId)}` : `/order/${o.id}`}
+                className="underline"
+              >
+                View
+              </Link>
             </div>
           </div>
         ))}

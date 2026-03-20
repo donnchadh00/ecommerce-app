@@ -31,7 +31,7 @@ export default function CheckoutPage() {
     } catch (error) {
       console.warn("Order was placed, but clearing the cart failed.", error);
     }
-    nav(`/order/${res.orderId}`, { state: { traceId: res.traceId } });
+    nav(`/order/${res.orderId}?traceId=${encodeURIComponent(res.traceId)}`, { state: { traceId: res.traceId } });
   };
 
   if (!rows.length) return <div>Your cart is empty.</div>;

@@ -41,6 +41,8 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: PRODUCT_INTERNAL_TOKEN
+            - name: TEMPO_BASE_URL
+              value: http://tempo:3200
             - name: SPRING_RABBITMQ_HOST
               value: rabbitmq
             - name: SPRING_RABBITMQ_PORT

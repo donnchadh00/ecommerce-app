@@ -5,6 +5,7 @@ import { API } from "../../api/config";
 export type OrderSummary = {
   id: number;
   status: string;
+  traceId?: string | null;
   total?: number;
   createdAt?: string;
 };

@@ -23,6 +23,8 @@ public class Order {
 
     private String status; // e.g., "PENDING", "CONFIRMED", "CANCELLED"
 
+    private String traceId;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<OrderItem> items = new ArrayList<>();

@@ -9,6 +9,7 @@ public record OrderResponse(
         Long userId,
         LocalDateTime createdAt,
         String status,
+        String traceId,
         BigDecimal total,
         List<OrderItemResponse> items
 ) {
