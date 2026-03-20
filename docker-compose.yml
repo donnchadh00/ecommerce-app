@@ -1,6 +1,37 @@
+x-app-environment: &app-environment
+  JWT_SECRET: ${JWT_SECRET}
+  JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-36000000}
+  OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}
+  OTEL_TRACES_EXPORTER: ${OTEL_TRACES_EXPORTER:-otlp}
+  OTEL_METRICS_EXPORTER: ${OTEL_METRICS_EXPORTER:-none}
+  OTEL_LOGS_EXPORTER: ${OTEL_LOGS_EXPORTER:-none}
+  OTEL_INSTRUMENTATION_LOGS_MDC_INJECTION: ${OTEL_INSTRUMENTATION_LOGS_MDC_INJECTION:-true}
+  JAVA_TOOL_OPTIONS: ${OTEL_JAVA_TOOL_OPTIONS:-}
+
+x-app-service: &app-service
+  restart: unless-stopped
+  networks:
+    - ecommerce-network
+  volumes:
+    - ./observability/opentelemetry-javaagent.jar:/otel/opentelemetry-javaagent.jar:ro
+
+x-postgres-service: &postgres-service
+  image: postgres:15
+  restart: unless-stopped
+  networks:
+    - ecommerce-network
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d $${POSTGRES_DB}"]
+    interval: 5s
+    timeout: 3s
+    retries: 20
+    start_period: 5s
+
 services:
   nginx:
     image: nginx:alpine
+    restart: unless-stopped
     ports:
       - "8080:80"
     volumes:
@@ -15,107 +46,15 @@ services:
     networks:
       - ecommerce-network
 
-  k6:
-    image: grafana/k6:latest
-    container_name: k6
-    environment:
-      - AUTH_URL=http://auth-service:8080/api/auth
-      - PRODUCT_URL=http://product-service:8080/api/products
-      - CART_URL=http://cart-service:8080/api/cart
-      - ORDER_URL=http://order-service:8080/api/orders
-      - PAYMENT_URL=http://payment-service:8080/api/payments
-      - INVENTORY_URL=http://inventory-service:8080/api/inventory
-
-      - K6_PROMETHEUS_RW_SERVER_URL=http://prometheus:9090/api/v1/write
-      - K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM=false
-      - K6_PROMETHEUS_RW_PUSH_INTERVAL=15s
-    volumes:
-      - ./infra/load:/scripts:ro
-    command:
-      [
-        "run",
-        "--tag","app=ecommerce",
-        "--out","experimental-prometheus-rw",
-        "/scripts/checkout-login.js"
-      ]
-    depends_on:
-      - prometheus
-      - auth-service
-      - product-service
-      - cart-service
-      - order-service
-      - payment-service
-      - inventory-service
-    networks: 
-      - ecommerce-network
-
-  otel-collector:
-    image: otel/opentelemetry-collector:latest
-    command: ["--config=/etc/otel-collector-config.yaml"]
-    volumes:
-      - ./observability/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
-    ports:
-      - "4317:4317"   # OTLP gRPC
-    networks:
-      - ecommerce-network
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:4317"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  tempo:
-    image: grafana/tempo:latest
-    command: ["-config.file=/etc/tempo.yaml"]
-    volumes:
-      - ./observability/tempo.yaml:/etc/tempo.yaml:ro
-    networks: 
-      - ecommerce-network
-
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --web.enable-remote-write-receiver
-    volumes:
-      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    ports:
-      - "9090:9090"
-    restart: unless-stopped
-    networks:
-      - ecommerce-network
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_AUTH_ANONYMOUS_ENABLED=false
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - grafana-storage:/var/lib/grafana
-      - ./observability/grafana-datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
-    depends_on:
-      - prometheus
-    restart: unless-stopped
-    networks:
-      - ecommerce-network
-
-
   rabbitmq:
     image: rabbitmq:3-management
-    container_name: rabbitmq
-    restart: always
+    restart: unless-stopped
     ports:
-      - "5672:5672"    # AMQP port
-      - "15672:15672"  # Management UI (admin/admin123)
+      - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_VHOST: /
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: admin123
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-admin123}
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     networks:
@@ -128,313 +67,225 @@ services:
       start_period: 5s
 
   postgres-auth:
-    image: postgres:15
-    container_name: postgres-auth
-    restart: always
+    <<: *postgres-service
     environment:
       POSTGRES_DB: authdb
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
     volumes:
       - auth-db-data:/var/lib/postgresql/data
-    networks:
-      - ecommerce-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d authdb"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-      start_period: 5s
 
   postgres-product:
-    image: postgres:15
-    container_name: postgres-product
-    restart: always
+    <<: *postgres-service
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
       POSTGRES_DB: productdb
-    ports:
-      - "5433:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
     volumes:
       - product-db-data:/var/lib/postgresql/data
-    networks:
-      - ecommerce-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d productdb"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-      start_period: 5s
 
   postgres-order:
-    image: postgres:15
-    container_name: postgres-order
-    restart: always
+    <<: *postgres-service
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
       POSTGRES_DB: orderdb
-    ports:
-      - "5434:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
     volumes:
       - order-db-data:/var/lib/postgresql/data
-    networks:
-      - ecommerce-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d orderdb"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-      start_period: 5s
-      
+
   postgres-cart:
-    image: postgres:15
-    container_name: postgres-cart
-    restart: always
+    <<: *postgres-service
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
       POSTGRES_DB: cartdb
-    ports:
-      - "5435:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
     volumes:
       - cart-db-data:/var/lib/postgresql/data
-    networks:
-      - ecommerce-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d cartdb"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-      start_period: 5s
 
   postgres-payment:
-    image: postgres:15
-    container_name: postgres-payment
-    restart: always
+    <<: *postgres-service
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
       POSTGRES_DB: paymentdb
-    ports:
-      - "5436:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
     volumes:
       - payment-db-data:/var/lib/postgresql/data
-    networks:
-      - ecommerce-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d paymentdb"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-      start_period: 5s
 
   postgres-inventory:
-    image: postgres:15
-    container_name: postgres-inventory
-    restart: always
+    <<: *postgres-service
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
       POSTGRES_DB: inventorydb
-    ports:
-      - "5437:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
     volumes:
       - inventory-db-data:/var/lib/postgresql/data
-    networks:
-      - ecommerce-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d inventorydb"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-      start_period: 5s
 
   auth-service:
+    <<: *app-service
     build:
       context: .
       dockerfile: auth-service/Dockerfile
-    # ports:
-    #   - "8081:8080"
     depends_on:
       postgres-auth:
         condition: service_healthy
-      otel-collector:
-        condition: service_started
-    networks:
-      - ecommerce-network
-    deploy:
-      replicas: 1
     environment:
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-36000000}
+      <<: *app-environment
       OTEL_SERVICE_NAME: auth-service
-      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_TRACES_EXPORTER: otlp
-      OTEL_METRICS_EXPORTER: none
-      OTEL_LOGS_EXPORTER: none
-      OTEL_INSTRUMENTATION_LOGS_MDC_INJECTION: "true"
-      JAVA_TOOL_OPTIONS: "-javaagent:/otel/opentelemetry-javaagent.jar"
-    volumes:
-      - ./observability/opentelemetry-javaagent.jar:/otel/opentelemetry-javaagent.jar:ro
 
   product-service:
+    <<: *app-service
     build:
       context: .
       dockerfile: product-service/Dockerfile
-    # ports:
-    #   - "8082:8080"
     depends_on:
       postgres-product:
         condition: service_healthy
-      otel-collector:
-        condition: service_started
-    networks:
-      - ecommerce-network
-    deploy:
-      replicas: 2
     environment:
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-36000000}
+      <<: *app-environment
       OTEL_SERVICE_NAME: product-service
-      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_TRACES_EXPORTER: otlp
-      OTEL_METRICS_EXPORTER: none
-      OTEL_LOGS_EXPORTER: none
-      OTEL_INSTRUMENTATION_LOGS_MDC_INJECTION: "true"
-      JAVA_TOOL_OPTIONS: "-javaagent:/otel/opentelemetry-javaagent.jar"
-    volumes:
-      - ./observability/opentelemetry-javaagent.jar:/otel/opentelemetry-javaagent.jar:ro
 
   order-service:
+    <<: *app-service
     build:
       context: .
       dockerfile: order-service/Dockerfile
-    # ports:
-    #   - "8083:8080"
     depends_on:
       postgres-order:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-      otel-collector:
-        condition: service_started
-    networks:
-      - ecommerce-network
-    deploy:
-      replicas: 1
     environment:
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-36000000}
-      PRODUCT_INTERNAL_TOKEN: ${PRODUCT_INTERNAL_TOKEN}
+      <<: *app-environment
       OTEL_SERVICE_NAME: order-service
-      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_TRACES_EXPORTER: otlp
-      OTEL_METRICS_EXPORTER: none
-      OTEL_LOGS_EXPORTER: none
-      OTEL_INSTRUMENTATION_LOGS_MDC_INJECTION: "true"
-      JAVA_TOOL_OPTIONS: "-javaagent:/otel/opentelemetry-javaagent.jar"
-    volumes:
-      - ./observability/opentelemetry-javaagent.jar:/otel/opentelemetry-javaagent.jar:ro
+      PRODUCT_INTERNAL_TOKEN: ${PRODUCT_INTERNAL_TOKEN}
+      TEMPO_BASE_URL: ${TEMPO_BASE_URL:-http://tempo:3200}
 
   cart-service:
+    <<: *app-service
     build:
       context: .
       dockerfile: cart-service/Dockerfile
-    # ports:
-    #   - "8084:8080"
     depends_on:
       postgres-cart:
         condition: service_healthy
-      otel-collector:
-        condition: service_started
-    networks:
-      - ecommerce-network
-    deploy:
-      replicas: 2
     environment:
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-36000000}
-      PRODUCT_INTERNAL_TOKEN: ${PRODUCT_INTERNAL_TOKEN}
+      <<: *app-environment
       OTEL_SERVICE_NAME: cart-service
-      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_TRACES_EXPORTER: otlp
-      OTEL_METRICS_EXPORTER: none
-      OTEL_LOGS_EXPORTER: none
-      OTEL_INSTRUMENTATION_LOGS_MDC_INJECTION: "true"
-      JAVA_TOOL_OPTIONS: "-javaagent:/otel/opentelemetry-javaagent.jar"
-    volumes:
-      - ./observability/opentelemetry-javaagent.jar:/otel/opentelemetry-javaagent.jar:ro
+      PRODUCT_INTERNAL_TOKEN: ${PRODUCT_INTERNAL_TOKEN}
 
   payment-service:
+    <<: *app-service
     build:
       context: .
       dockerfile: payment-service/Dockerfile
-    # ports:
-    #   - "8085:8080"
     depends_on:
       postgres-payment:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-      otel-collector:
-        condition: service_started
-    networks:
-      - ecommerce-network
-    deploy:
-      replicas: 2
     environment:
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-36000000}
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      <<: *app-environment
       OTEL_SERVICE_NAME: payment-service
-      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_TRACES_EXPORTER: otlp
-      OTEL_METRICS_EXPORTER: none
-      OTEL_LOGS_EXPORTER: none
-      OTEL_INSTRUMENTATION_LOGS_MDC_INJECTION: "true"
-      JAVA_TOOL_OPTIONS: "-javaagent:/otel/opentelemetry-javaagent.jar"
-    volumes:
-      - ./observability/opentelemetry-javaagent.jar:/otel/opentelemetry-javaagent.jar:ro
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
 
   inventory-service:
+    <<: *app-service
     build:
       context: .
       dockerfile: inventory-service/Dockerfile
-    # ports:
-    #   - "8086:8080"
     depends_on:
       postgres-inventory:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-      otel-collector:
-        condition: service_started
-    networks:
-    - ecommerce-network
-    deploy:
-      replicas: 1
     environment:
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-36000000}
+      <<: *app-environment
       OTEL_SERVICE_NAME: inventory-service
-      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_TRACES_EXPORTER: otlp
-      OTEL_METRICS_EXPORTER: none
-      OTEL_LOGS_EXPORTER: none
-      OTEL_INSTRUMENTATION_LOGS_MDC_INJECTION: "true"
-      JAVA_TOOL_OPTIONS: "-javaagent:/otel/opentelemetry-javaagent.jar"
+
+  otel-collector:
+    profiles: ["observability"]
+    image: otel/opentelemetry-collector:latest
+    restart: unless-stopped
+    command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
-      - ./observability/opentelemetry-javaagent.jar:/otel/opentelemetry-javaagent.jar:ro
+      - ./observability/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    networks:
+      - ecommerce-network
+
+  tempo:
+    profiles: ["observability"]
+    image: grafana/tempo:2.10.0
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./observability/tempo.yaml:/etc/tempo.yaml:ro
+    networks:
+      - ecommerce-network
+
+  prometheus:
+    profiles: ["observability", "loadtest"]
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-remote-write-receiver
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - ecommerce-network
+
+  grafana:
+    profiles: ["observability"]
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./observability/grafana-datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+    depends_on:
+      - prometheus
+    networks:
+      - ecommerce-network
+
+  k6:
+    profiles: ["loadtest"]
+    image: grafana/k6:latest
+    environment:
+      AUTH_URL: http://auth-service:8080/api/auth
+      PRODUCT_URL: http://product-service:8080/api/products
+      CART_URL: http://cart-service:8080/api/cart
+      ORDER_URL: http://order-service:8080/api/orders
+      PAYMENT_URL: http://payment-service:8080/api/payments
+      INVENTORY_URL: http://inventory-service:8080/api/inventory
+      K6_PROMETHEUS_RW_SERVER_URL: http://prometheus:9090/api/v1/write
+      K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM: "false"
+      K6_PROMETHEUS_RW_PUSH_INTERVAL: 15s
+    volumes:
+      - ./infra/load:/scripts:ro
+    command:
+      [
+        "run",
+        "--tag", "app=ecommerce",
+        "--out", "experimental-prometheus-rw",
+        "/scripts/checkout-login.js"
+      ]
+    depends_on:
+      - prometheus
+      - auth-service
+      - product-service
+      - cart-service
+      - order-service
+      - payment-service
+      - inventory-service
+    networks:
+      - ecommerce-network
 
 networks:
   ecommerce-network:
@@ -449,4 +300,3 @@ volumes:
   inventory-db-data:
   rabbitmq-data:
   grafana-storage:
-  

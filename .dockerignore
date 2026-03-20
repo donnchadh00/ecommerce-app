@@ -1,0 +1,13 @@
+.git
+.github
+.idea
+.vscode
+.env
+docker-compose.yml
+k8s/
+frontend/
+infra/
+observability/
+**/target/
+**/.DS_Store
+**/*.log
