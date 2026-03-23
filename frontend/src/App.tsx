@@ -13,7 +13,7 @@ import AuthMenu from "./features/auth/AuthMenu";
 function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      <header className="sticky top-0 bg-white border-b">
+      <header className="sticky top-0 z-30 border-b bg-white">
         <div className="mx-auto max-w-6xl px-4 py-3 flex items-center gap-6">
           <Link to="/" className="font-semibold text-lg">E-Commerce</Link>
           <nav className="ml-auto flex items-center gap-4">

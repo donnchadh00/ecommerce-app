@@ -17,7 +17,7 @@ export default function TraceTimeline({ timeline }: Props) {
   const maxEnd = Math.max(...timeline.spans.map((span) => span.offsetMs + span.durationMs), 1);
 
   return (
-    <div className="space-y-3 rounded-2xl border bg-white p-4 shadow-sm">
+    <div className="space-y-3 overflow-hidden rounded-2xl border bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold">Order trace</h2>
@@ -45,7 +45,7 @@ export default function TraceTimeline({ timeline }: Props) {
                   <span className="truncate pr-4">{span.name}</span>
                   <span>{span.durationMs} ms</span>
                 </div>
-                <div className="relative h-8 rounded-lg bg-gray-100">
+                <div className="relative h-8 overflow-hidden rounded-lg bg-gray-100">
                   <div
                     className={`absolute top-1.5 h-5 rounded-md ${color}`}
                     style={{ left: `${left}%`, width: `${width}%` }}
