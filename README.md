@@ -75,6 +75,7 @@ Shared modules:
    This starts the core local stack with:
 
    - seeded admin account: `admin@demo.local` / `Admin123!`
+   - seeded guest account: `guest@demo.local` / `Admin123!`
    - seeded products in the catalog
    - frontend-ready API paths through the Nginx gateway
 
@@ -95,6 +96,7 @@ Shared modules:
 
 - register a normal user, or
 - log in as `admin@demo.local` / `Admin123!`
+- use the `Continue as guest` button on the sign-in page
 - browse the seeded products
 - add items to cart
 - place an order and inspect resulting service logs/events
