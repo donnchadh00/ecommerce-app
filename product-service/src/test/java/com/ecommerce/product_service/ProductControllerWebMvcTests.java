@@ -49,8 +49,7 @@ class ProductControllerWebMvcTests {
     private JwtAuthFilter jwtAuthFilter;
 
     @Test
-    @WithMockUser(roles = "USER")
-    void getAllProductsReturnsCatalogDtos() throws Exception {
+    void getAllProductsReturnsCatalogDtosForAnonymousUsers() throws Exception {
         when(productService.getAll()).thenReturn(List.of(
                 new ProductResponse(1L, "Trail Shoes", "Grip for wet ground", new BigDecimal("129.99"), 12)
         ));

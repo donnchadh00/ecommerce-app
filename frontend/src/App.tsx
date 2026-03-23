@@ -36,7 +36,7 @@ function App() {
     <Layout>
       <Routes>
         <Route path="/" element={<CatalogPage />} />
-        <Route path="/cart" element={<CartPage />} />
+        <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
         <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
         <Route path="/order/:id" element={<OrderConfirmationPage />} />
         <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
