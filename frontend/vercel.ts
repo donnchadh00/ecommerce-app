@@ -2,9 +2,24 @@ declare const process: {
   env: Record<string, string | undefined>;
 };
 
-const apiOrigin = (process.env.API_ORIGIN ?? "http://127.0.0.1:8080").replace(/\/+$/, "");
+type VercelConfig = {
+  buildCommand: string;
+  outputDirectory: string;
+  rewrites: Array<{
+    source: string;
+    destination: string;
+  }>;
+};
 
-export const config = {
+const configuredApiOrigin = process.env.API_ORIGIN?.replace(/\/+$/, "");
+
+if (!configuredApiOrigin && process.env.VERCEL) {
+  throw new Error("API_ORIGIN must be set in the Vercel project environment variables.");
+}
+
+const apiOrigin = configuredApiOrigin ?? "http://127.0.0.1:8080";
+
+export const config: VercelConfig = {
   buildCommand: "npm run build",
   outputDirectory: "dist",
   rewrites: [
@@ -13,7 +28,7 @@ export const config = {
       destination: `${apiOrigin}/api/:match*`,
     },
     {
-      source: "/((?!api/).*)",
+      source: "/(.*)",
       destination: "/index.html",
     },
   ],
