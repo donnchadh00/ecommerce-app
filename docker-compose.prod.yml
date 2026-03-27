@@ -1,0 +1,42 @@
+services:
+  auth-service:
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+
+  product-service:
+    depends_on:
+      postgres-product:
+        condition: service_healthy
+
+  order-service:
+    depends_on:
+      postgres-order:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  cart-service:
+    depends_on:
+      postgres-cart:
+        condition: service_healthy
+
+  payment-service:
+    depends_on:
+      postgres-payment:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  inventory-service:
+    depends_on:
+      postgres-inventory:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  prometheus:
+    profiles: ["dashboards"]
+
+  grafana:
+    profiles: ["dashboards"]
