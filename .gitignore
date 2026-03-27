@@ -11,6 +11,7 @@ target/
 
 # Docker
 .env
+.env.production
 *.pid
 
 # Others
