@@ -171,37 +171,17 @@ Steps:
    docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.prod.yml up --build -d
    ```
 
-6. Seed inventory for the six demo products. Product records are seeded automatically, but inventory rows are not.
-
-   ```bash
-   docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.prod.yml exec -T postgres-inventory psql -U user -d inventorydb <<'SQL'
-   INSERT INTO inventory (product_id, quantity)
-   VALUES
-     (1, 1000),
-     (2, 1000),
-     (3, 1000),
-     (4, 1000),
-     (5, 1000),
-     (6, 1000);
-   SQL
-   ```
-
-7. Verify the backend:
+6. Verify the backend:
 
    ```bash
    curl http://localhost:8080/healthz
    curl http://localhost:8080/api/products
    ```
 
-8. In Vercel, create a project with `frontend/` as the root directory and deploy it.
+7. In Vercel, create a project with `frontend/` as the root directory and deploy it.
 
 The frontend stays same-origin with Vercel, so no additional CORS configuration is required.
 
-Notes:
-
-- The rewrite target is currently committed in `frontend/vercel.json`. If the Oracle VM public IP changes, update that file and redeploy the frontend.
-- On a fresh VM, `/api/products` can return `502` while `product-service` is still starting.
-- Keep RabbitMQ management (`15672`) closed in OCI security rules.
 
 ## Kubernetes Notes
 
