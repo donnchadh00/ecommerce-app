@@ -17,13 +17,11 @@ const navClassName = ({ isActive }: { isActive: boolean }) =>
 function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen text-slate-900">
-      <header className="sticky top-0 z-30 border-b border-white/70 bg-slate-50/85 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/92 shadow-sm shadow-slate-200/70 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <Link to="/" className="shrink-0">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white shadow-sm">
-                EC
-              </div>
+              <img src="/favicon.svg" alt="" className="h-11 w-11 rounded-2xl shadow-sm" />
               <div>
                 <div className="text-base font-semibold tracking-tight text-slate-950">E-Commerce</div>
                 <div className="text-xs text-slate-500">Microservices storefront</div>

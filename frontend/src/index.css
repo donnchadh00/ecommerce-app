@@ -16,10 +16,7 @@
   body {
     min-height: 100vh;
     margin: 0;
-    background-color: #f3f6fb;
-    background-image:
-      radial-gradient(circle at top, rgba(20, 184, 166, 0.12), transparent 28rem),
-      linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+    background-color: #f4f7fb;
     color: #0f172a;
     font-family: "Manrope", "Segoe UI", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
