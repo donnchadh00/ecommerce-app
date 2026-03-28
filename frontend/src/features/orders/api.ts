@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/axios";
 import { API } from "../../api/config";
+import { getStoredUserId } from "../auth/jwt";
 
 export type OrderSummary = {
   id: number;
@@ -10,19 +11,8 @@ export type OrderSummary = {
   createdAt?: string;
 };
 
-function userIdFromJwt(): number | null {
-  const t = localStorage.getItem("token");
-  if (!t) return null;
-  try {
-    const [, payload] = t.split(".");
-    const claims = JSON.parse(atob(payload));
-    const n = Number(claims.userId);
-    return Number.isFinite(n) ? n : null;
-  } catch { return null; }
-}
-
 export function useOrders() {
-  const userId = userIdFromJwt();
+  const userId = getStoredUserId();
   return useQuery({
     enabled: !!userId,
     queryKey: ["orders", userId],
