@@ -3,6 +3,10 @@
 A microservices-based ecommerce application built with Spring Boot, React, RabbitMQ, Postgres, and Kubernetes.
 It uses asynchronous order processing, idempotent event handling, and observability with logs, metrics, and traces.
 
+## Live Demo
+
+App: https://ecommerce-app-chi-five.vercel.app/
+
 ## Architecture
 
 The system is split into independent services, each with its own Postgres database:
