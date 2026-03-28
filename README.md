@@ -2,6 +2,7 @@
 
 A microservices-based ecommerce application built with Spring Boot, React, RabbitMQ, Postgres, and Kubernetes.
 It uses asynchronous order processing, idempotent event handling, and observability with logs, metrics, and traces.
+The frontend includes an order confirmation trace timeline backed by OpenTelemetry and Tempo.
 
 ## Live Demo
 
@@ -207,6 +208,7 @@ Ingress: [http://localhost](http://localhost).
 - JSON structured logs with correlation and trace IDs
 - Spring Boot actuator health and Prometheus metrics
 - OpenTelemetry Java agent exporting traces to Tempo
+- Order confirmation trace timeline surfaced in the frontend
 - Grafana dashboards and Prometheus config included in-repo
 
 ## Load Testing
