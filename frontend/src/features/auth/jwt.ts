@@ -21,3 +21,16 @@ export function parseJwt(token: string | null): User | null {
     return null;
   }
 }
+
+export function getStoredToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("token");
+}
+
+export function getStoredUser(): User | null {
+  return parseJwt(getStoredToken());
+}
+
+export function getStoredUserId(): number | null {
+  return getStoredUser()?.id ?? null;
+}

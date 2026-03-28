@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/axios";
 import { API } from "../../api/config";
+import { getStoredUserId } from "../auth/jwt";
 
 export type CartItem = {
   productId: number;
@@ -10,23 +11,12 @@ export type CartItem = {
   imageUrl?: string;
 };
 
-function getUserIdFromToken(): number | null {
-  const t = localStorage.getItem("token");
-  if (!t) return null;
-  try {
-    const [, payload] = t.split(".");
-    const claims = JSON.parse(atob(payload));
-    const candidate = claims.userId;
-    const n = Number(candidate);
-    return Number.isFinite(n) ? n : null;
-  } catch {
-    return null;
-  }
-}
-
 export function useCart() {
+  const userId = getStoredUserId();
+
   return useQuery({
-    queryKey: ["cart"],
+    enabled: !!userId,
+    queryKey: ["cart", userId],
     queryFn: async (): Promise<CartItem[]> => {
       const { data } = await api.get(`${API.cart}`);
       return data;
@@ -38,7 +28,7 @@ export function useAddToCart() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: { productId: number; quantity?: number }) => {
-      const userId = getUserIdFromToken();
+      const userId = getStoredUserId();
       if (!userId) throw new Error("No userId found in token; please login first.");
       return api.post(`${API.cart}/add`, {
         userId,
